@@ -1,0 +1,57 @@
+name: deploy
+
+# Pushing to main deploys nothing. Only a version tag (v*) or a manual run deploys,
+# so rolling back is the same as deploying an older tag.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Tag or branch to deploy
+        default: main
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://medquest.syahranfd.site
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      # The deploy key is locked to rsync into /var/www/medquest only (rrsync forced command),
+      # so the remote path is "./" relative to that folder.
+      # ponytail: upload is not atomic (index.html can land before new assets); switch to release
+      # dirs plus a symlink flip if a half-deployed window ever matters.
+      - name: Upload to VPS
+        env:
+          KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          rsync -az --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes" \
+            dist/ "${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:./"
+
+      - name: Verify the site answers with the new build
+        run: |
+          curl -fsS "$SITE/" | grep -q '<div id="root">'
+          curl -fsSI "$SITE/" | grep -i '^cache-control: no-store'

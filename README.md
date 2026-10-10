@@ -105,6 +105,19 @@ regions for trust changes and toasts, focus returns to the opener when a dialog 
 `prefers-reduced-motion`, `prefers-reduced-transparency` and `prefers-contrast`. The e2e suite runs axe on every
 route in Indonesian and English.
 
+## CI/CD and deploy
+
+- `gate` (`.github/workflows/gate.yml`) runs `npm run gate` and checks `src/routeTree.gen.ts` is not stale, on every
+  pull request and push to `main`.
+- `deploy` (`.github/workflows/deploy.yml`) builds and rsyncs `dist/` to the VPS. Pushing to `main` deploys nothing:
+  push a tag (`git tag v0.1.0 && git push origin v0.1.0`) or run the workflow by hand with a tag or branch. Rolling
+  back is deploying an older tag.
+- Live at https://medquest.syahranfd.site: static files in `/var/www/medquest`, served by Nginx with a SPA fallback and
+  a Let's Encrypt certificate (certbot renews it).
+- The deploy key can only rsync into that one folder (`rrsync` forced command in the `deploy` user's
+  `authorized_keys`). Repo secrets: `VPS_SSH_KEY`, `VPS_KNOWN_HOSTS` (pinned host key), `VPS_HOST`, `VPS_USER`. No
+  AI or provider key is involved; the demo is frontend-only.
+
 ## Known limits
 
 - Frontend-only: no auth, no voice (STT or TTS), no real AI, no persistence beyond the browser.
