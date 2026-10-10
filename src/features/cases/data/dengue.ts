@@ -1,0 +1,277 @@
+// Kasus 1 (IGD): demam berdarah dengue dengan syok (dengue shock syndrome). SINTETIS.
+// Konsultan medis harus memvalidasi dosis cairan, ambang hematokrit, dan alur sebelum dipakai di luar simulasi.
+
+import { buildRubric, crit, defaultFallbacks, exam, iceEntries, makeTests, P, pickDispositions, pickTreatments, q, safetyNetCriterion, vitals } from '../builders'
+import type { Case } from '../types'
+
+const MODE = 'er' as const
+
+export const dengueCase: Case = {
+  id: 'er-dengue-dss',
+  mode: MODE,
+  specialty: 'Penyakit Dalam / IGD',
+  difficulty: 'sedang',
+  synthetic: true,
+  severity: 'critical',
+  title: 'Demam berdarah dengan syok',
+  patient: { name: 'Sari Wulandari', age: 26, gender: 'F', occupation: 'Karyawan swasta' },
+  arrivalBlurb: 'Perempuan 26 tahun, demam 4 hari, hari ini demam turun tetapi lemas, nyeri perut, tangan dan kaki dingin.',
+  chiefComplaint: 'Badan saya lemas sekali, Dok, perut sakit, dan tadi mau pingsan.',
+  vitals: vitals(122, '90/70', 24, 97, 37.2),
+  initialTrust: 52,
+  greeting: 'Dok, saya lemas sekali...',
+  farewell: 'Terima kasih, Dok.',
+  fallbacks: defaultFallbacks({
+    unclear: [
+      'Maaf, Dok, saya pusing, bisa diulang pelan-pelan?',
+      'Hah, bagaimana Dok? Saya kurang dengar.',
+      'Maksudnya apa ya, Dok?',
+    ],
+    empathyReply: 'Iya, Dok... saya takut sekali. Terima kasih sudah mau mendengarkan.',
+  }),
+  dialogue: [
+    q('keluhan-utama', 'rps', 'Keluhan utama Ibu apa?', 'Badan lemas sekali, Dok, perut sakit, dan tadi hampir pingsan waktu berdiri.', ['keluhan utama', 'apa keluhan', 'keluhan apa', 'ada keluhan', 'cerita keluhan', 'mengapa datang']),
+    q('onset', 'rps', 'Demamnya sejak kapan?', 'Sudah empat hari, Dok. Mulainya tiba-tiba, tinggi sekali sampai menggigil.', ['demam sejak kapan', 'sejak kapan', 'kapan mulai', 'sudah berapa lama', 'berapa lama demam', 'berapa hari demam']),
+    q('pola-demam', 'rps', 'Bagaimana pola demamnya, apakah sekarang masih demam?', 'Hari ini demamnya turun, Dok, malah badan terasa dingin dan makin lemas.', ['pola demam', 'demam turun', 'masih demam', 'demam sekarang', 'suhu', 'demam naik turun', 'pola']),
+    q('nyeri-kepala-otot', 'rps', 'Apakah ada nyeri kepala, nyeri belakang mata, atau nyeri otot dan sendi?', 'Iya, Dok. Kepala sakit, belakang mata sakit, dan badan pegal-pegal seperti dipukuli.', ['nyeri kepala', 'belakang mata', 'nyeri otot', 'nyeri sendi', 'pegal', 'nyeri tulang']),
+    q('nyeri-perut', 'rps', 'Apakah ada nyeri perut? Di bagian mana?', 'Ada, Dok, di ulu hati dan perut kanan atas. Makin lama makin sakit.', ['nyeri perut', 'sakit perut', 'perut sakit', 'nyeri ulu hati', 'perut']),
+    q('mual-muntah', 'rps', 'Apakah ada mual atau muntah terus-menerus?', 'Mual terus, Dok, tadi pagi muntah tiga kali, tidak bisa makan.', ['mual', 'muntah', 'muntah terus']),
+    q('perdarahan', 'rps', 'Apakah ada perdarahan, misalnya mimisan, gusi berdarah, atau BAB hitam?', 'Tadi pagi gusi saya berdarah sedikit, Dok. BAB-nya agak hitam kemarin.', ['perdarahan', 'mimisan', 'gusi berdarah', 'bab hitam', 'bab darah', 'darah'], { red: true }),
+    q('kencing', 'rps', 'Bagaimana buang air kecilnya? Apakah berkurang?', 'Sedikit sekali, Dok. Dari pagi baru sekali dan warnanya pekat.', ['kencing berkurang', 'kencing', 'urin', 'berapa kali kencing'], { red: true }),
+    q('lemas-pusing', 'rps', 'Apakah pusing atau hampir pingsan saat berdiri, dan tangan kaki terasa dingin?', 'Iya, Dok, kepala berputar kalau berdiri, tangan dan kaki dingin sekali.', ['pusing', 'pingsan', 'pusing berdiri', 'tangan kaki dingin', 'dingin', 'lemas'], { red: true }),
+    q('asupan', 'rps', 'Apakah Ibu masih bisa makan dan minum?', 'Minum sedikit-sedikit saja, Dok, makan hampir tidak bisa.', ['makan minum', 'asupan', 'bisa minum', 'nafsu', 'minum cukup', 'cairan']),
+    q('ruam', 'rps', 'Apakah ada bintik merah atau ruam di kulit?', 'Ada bintik-bintik merah di lengan dan kaki sejak kemarin.', ['bintik merah', 'ruam', 'bercak', 'kulit merah', 'ruam kulit']),
+    ...iceEntries(
+      'Saya kira tifus atau kecapekan, Dok. Tapi tetangga ada yang DBD.',
+      'Saya takut parah, Dok. Katanya DBD bisa meninggal kalau telat.',
+      'Saya mau cepat ditolong, Dok, dan tidak lemas lagi.',
+    ),
+    q('kontak-dbd', 'sosial', 'Apakah ada tetangga atau keluarga yang sedang sakit demam berdarah?', 'Ada, Dok, tetangga sebelah kos dirawat karena DBD minggu lalu. Di kos banyak genangan air.', ['tetangga keluarga sakit demam berdarah', 'kontak dbd', 'tetangga dbd', 'tetangga sakit', 'sekitar rumah', 'kontak sakit', 'menular', 'nyamuk', 'dbd']),
+    q('riwayat-dbd', 'rpd', 'Apakah Ibu pernah terkena demam berdarah sebelumnya?', 'Pernah waktu SMA, Dok, dirawat tiga hari.', ['riwayat dbd', 'pernah dbd', 'pernah demam berdarah', 'dbd sebelumnya', 'riwayat demam berdarah']),
+    q('rpd-umum', 'rpd', 'Apakah ada penyakit lain, misalnya asma, maag, atau penyakit darah?', 'Maag saja, Dok, kadang kambuh. Tidak ada yang lain.', ['riwayat penyakit', 'penyakit lain', 'maag', 'penyakit dahulu', 'riwayat sakit', 'kronis']),
+    q('keluarga', 'keluarga', 'Apakah ada riwayat penyakit di keluarga, misalnya darah tinggi atau kencing manis?', 'Ibu saya darah tinggi, Dok. Yang lain tidak ada.', ['riwayat keluarga', 'keluarga sakit', 'keluarga penyakit', 'keluarga hipertensi', 'keluarga']),
+    q('alergi-obat', 'alergi', 'Apakah Ibu punya alergi obat atau makanan?', 'Tidak ada, Dok.', ['alergi obat', 'alergi', 'alergi makanan']),
+    q('obat-demam', 'obat', 'Obat apa yang sudah Ibu minum sejak demam?', 'Parasetamol dan ibuprofen dari warung, Dok, tiga kali sehari sejak kemarin.', ['minum obat apa', 'obat apa', 'obat demam', 'sudah minum obat', 'obat warung', 'parasetamol', 'ibuprofen', 'obat penurun panas', 'makan obat']),
+    q('haid', 'sosial', 'Kapan haid terakhir Ibu, dan apakah mungkin hamil?', 'Haid terakhir sepuluh hari yang lalu, Dok, tidak hamil.', ['haid', 'menstruasi', 'hamil', 'hpht', 'kehamilan'], { gate: [55, 'Hmm... kenapa ditanya itu, Dok? Nanti saja.'] }),
+    q('tempat-tinggal', 'sosial', 'Ibu tinggal di mana dan dengan siapa?', 'Di kos dekat kantor, Dok, sendirian.', ['tinggal', 'tinggal di mana', 'tinggal dengan siapa', 'rumah', 'kos']),
+    q('trauma', 'rps', 'Apakah ada kecelakaan atau benturan baru-baru ini?', 'Tidak ada, Dok.', ['trauma', 'kecelakaan', 'benturan', 'jatuh'], { distractor: true }),
+    q('batuk-pilek', 'rps', 'Apakah ada batuk atau pilek?', 'Tidak, Dok.', ['batuk', 'pilek', 'sesak', 'tenggorokan'], { distractor: true }),
+  ],
+  exam: [
+    exam('umum', 'umum', 'Keadaan umum', 'Tampak sakit berat, lemah, gelisah. Kesadaran compos mentis.', { abnormal: true }),
+    exam('nadi', 'jantung', 'Nadi dan tekanan nadi', 'Nadi 122x/menit, kecil dan lemah. Tekanan nadi 20 mmHg (menyempit).', { abnormal: true }),
+    exam('akral-crt', 'ekstremitas', 'Akral dan CRT', 'Akral dingin dan lembab, CRT 4 detik.', { abnormal: true }),
+    exam('kepala-leher', 'kepala-leher', 'Mulut dan mata', 'Bibir kering, mukosa mulut kering, konjungtiva tidak anemis.', { abnormal: true }),
+    exam('kulit', 'kulit', 'Kulit', 'Petekie tersebar di kedua lengan dan tungkai, ruam kemerahan.', { abnormal: true }),
+    exam('abdomen', 'abdomen', 'Abdomen', 'Nyeri tekan epigastrium dan hipokondrium kanan, hepar teraba 2 cm di bawah arkus kosta, tidak ada asites jelas.', { abnormal: true }),
+    exam('paru', 'paru', 'Paru', 'Perkusi redup basal kanan, suara napas menurun di basal kanan (curiga efusi pleura).', { abnormal: true }),
+    exam('jantung', 'jantung', 'Jantung', 'Takikardia reguler, tidak ada murmur.'),
+    exam('tenggorok', 'kepala-leher', 'Tenggorokan', 'Faring tidak hiperemis, tonsil T1-T1.', { distractor: true }),
+    exam('neuro', 'neurologi', 'Neurologi', 'Gelisah, tidak ada kaku kuduk, tidak ada defisit fokal.'),
+  ],
+  tests: makeTests(MODE, [
+    [
+      'dpl',
+      [
+        { text: 'Hb 15,6 g/dL, hematokrit 36% (turun dari 47% setelah resusitasi cairan), leukosit 3.000/uL, trombosit 31.000/uL.', abnormal: true, afterTreatment: ['kristaloid-bolus'] },
+        { text: 'Hb 15,6 g/dL, hematokrit 47% (hemokonsentrasi; baseline perempuan sekitar 38%), leukosit 2.900/uL, trombosit 28.000/uL.', abnormal: true, critical: true },
+      ],
+    ],
+    ['ns1', [{ text: 'NS1 antigen dengue: positif.', abnormal: true }]],
+    ['igm-igg-dengue', [{ text: 'IgM dengue positif, IgG dengue positif (pola infeksi sekunder).', abnormal: true }]],
+    ['tourniquet', [{ text: 'Uji bendung positif: lebih dari 20 petekie per 2,5 cm persegi.', abnormal: true }]],
+    ['usg-abdomen', [{ text: 'USG abdomen: cairan bebas perihepatik dan di rongga pelvis, penebalan dinding kandung empedu, hepar sedikit membesar.', abnormal: true, imageId: 'usg-free-fluid' }]],
+    ['foto-toraks', [{ text: 'Foto toraks (RLD kanan): efusi pleura kanan, jantung dalam batas normal.', abnormal: true, imageId: 'cxr-pleural-effusion-right' }]],
+    ['sgot-sgpt', [{ text: 'SGOT 142 U/L, SGPT 98 U/L (meningkat).', abnormal: true }]],
+    ['elektrolit', [{ text: 'Na 131, K 3,4, Cl 98 mmol/L (hiponatremia ringan, hipokalemia ringan).', abnormal: true }]],
+    [
+      'laktat',
+      [
+        { text: 'Laktat 5,6 mmol/L (meningkat berat).', abnormal: true, critical: true, minStage: 2 },
+        { text: 'Laktat 3,4 mmol/L (meningkat).', abnormal: true },
+      ],
+    ],
+    ['agd', [{ text: 'pH 7,32, pCO2 29, HCO3 15 (asidosis metabolik).', abnormal: true }]],
+    ['ureum-kreatinin', [{ text: 'Ureum 38, kreatinin 1,3 mg/dL.', abnormal: true }]],
+    ['koagulasi', [{ text: 'aPTT memanjang 48 detik, PT 14 detik.', abnormal: true }]],
+    ['rdt-malaria', [{ text: 'RDT malaria negatif.', abnormal: false }]],
+    ['apusan-malaria', [{ text: 'Apusan darah: tidak ditemukan parasit malaria.', abnormal: false }]],
+    ['ekg', [{ text: 'EKG: sinus takikardia 124x/menit, tidak ada kelainan segmen ST.', abnormal: true }]],
+    'gds',
+    'ct-kepala',
+  ]),
+  panels: [
+    { id: 'panel-dengue', label: 'Panel dengue', testIds: ['dpl', 'ns1', 'igm-igg-dengue', 'sgot-sgpt', 'elektrolit'] },
+    { id: 'panel-syok', label: 'Panel syok', testIds: ['dpl', 'laktat', 'agd', 'ureum-kreatinin', 'elektrolit'] },
+  ],
+  diagnoses: [
+    { id: 'dbd-syok', label: 'Demam berdarah dengue dengan syok (DSS)' },
+    { id: 'dengue-tanpa-tanda-bahaya', label: 'Demam dengue tanpa tanda bahaya' },
+    { id: 'malaria', label: 'Malaria' },
+    { id: 'tifoid', label: 'Demam tifoid' },
+    { id: 'sepsis-intraabdomen', label: 'Sepsis intraabdomen' },
+  ],
+  correctDiagnosisId: 'dbd-syok',
+  differentialIds: ['dengue-tanpa-tanda-bahaya', 'malaria', 'tifoid', 'sepsis-intraabdomen'],
+  treatments: pickTreatments([
+    'akses-iv',
+    'kristaloid-bolus',
+    'oksigen',
+    'monitor',
+    'kateter',
+    'parasetamol',
+    'ondansetron',
+    'ibuprofen',
+    'ketorolak',
+    'furosemid-iv',
+    'deksametason',
+  ]),
+  indicatedTreatmentIds: ['akses-iv', 'kristaloid-bolus', 'monitor', 'kateter', 'parasetamol'],
+  criticalTreatmentIds: ['kristaloid-bolus'],
+  contraindicated: [
+    { id: 'ibuprofen', reason: 'OAINS meningkatkan risiko perdarahan pada dengue dan mengiritasi lambung.' },
+    { id: 'ketorolak', reason: 'OAINS meningkatkan risiko perdarahan pada dengue.' },
+    { id: 'furosemid-iv', reason: 'Diuretik memperburuk hipovolemia pada syok dengue.' },
+  ],
+  dispositions: pickDispositions(['pulang', 'observasi-igd', 'rawat-bangsal', 'rawat-hcu', 'rawat-icu']),
+  correctDispositionId: 'rawat-icu',
+  acceptableDispositionIds: ['rawat-hcu'],
+  er: {
+    arrivalSec: 90,
+    triage: {
+      esi: 2,
+      zone: 'red',
+      reason: 'Hari sakit ke-4 dengan demam turun, tekanan nadi 20 mmHg, akral dingin, dan CRT 4 detik: fase kritis dengan tanda syok terkompensasi.',
+    },
+    timeline: [
+      {
+        stage: 1,
+        atSec: 150,
+        vitalsDelta: { hr: 10, sbp: -8, dbp: -4, rr: 3, spo2: -1 },
+        line: 'Tekanan nadi makin menyempit dan akral makin dingin.',
+        averted: ['kristaloid-bolus'],
+      },
+      {
+        stage: 2,
+        atSec: 330,
+        vitalsDelta: { hr: 18, sbp: -14, dbp: -10, rr: 6, spo2: -3, gcs: -2 },
+        line: 'Syok dekompensasi: tekanan darah sangat rendah dan pasien mulai bingung.',
+        averted: ['kristaloid-bolus'],
+      },
+      {
+        stage: 3,
+        atSec: 540,
+        vitalsDelta: { hr: -80, sbp: -40, dbp: -30, spo2: -20, gcs: -9 },
+        line: 'Pasien henti jantung.',
+        averted: ['kristaloid-bolus'],
+      },
+    ],
+    effects: [
+      { treatmentId: 'kristaloid-bolus', improves: true, vitalsDelta: { hr: -12, sbp: 14, dbp: 8, rr: -2 } },
+      { treatmentId: 'oksigen', vitalsDelta: { spo2: 1 } },
+      { treatmentId: 'parasetamol', vitalsDelta: { temp: -0.2 } },
+      { treatmentId: 'ibuprofen', harmful: true },
+      { treatmentId: 'ketorolak', harmful: true },
+      { treatmentId: 'furosemid-iv', harmful: true, vitalsDelta: { sbp: -10, dbp: -6 } },
+    ],
+    criticalDeadlineSec: 300,
+  },
+  guidelineIds: ['kemenkes-pnpk-dengue', 'who-dengue-2009'],
+  rubric: buildRubric({
+    criteria: [
+      crit('an-01', 'anamnesis', 2, 'Perjalanan demam dan fase penyakit', P.asked(['onset', 'pola-demam'], 2), {
+        met: 'Lama demam dan pola demam ditanyakan sehingga fase kritis dikenali.',
+        partial: 'Hanya sebagian perjalanan demam ditanyakan.',
+        missed: 'Perjalanan demam tidak digali.',
+      }, { partial: P.asked(['onset', 'pola-demam'], 1), improve: 'Tanyakan hari sakit dan apakah demam sudah turun: fase kritis dimulai saat demam turun.' }),
+      crit('an-02', 'anamnesis', 2, 'Tanda bahaya (warning signs)', P.asked(['nyeri-perut', 'mual-muntah', 'perdarahan', 'kencing', 'lemas-pusing'], 3), {
+        met: 'Tanda bahaya dengue ditanyakan.',
+        partial: 'Sebagian tanda bahaya ditanyakan.',
+        missed: 'Tanda bahaya dengue tidak ditanyakan.',
+      }, { partial: P.asked(['nyeri-perut', 'mual-muntah', 'perdarahan', 'kencing', 'lemas-pusing'], 2), ref: 'who-dengue-2009', improve: 'Tanyakan nyeri perut, muntah menetap, perdarahan, produksi urin, dan lemas atau pusing.' }),
+      crit('an-03', 'anamnesis', 2, 'Obat yang sudah diminum (OAINS)', P.asked(['obat-demam']), {
+        met: 'Obat yang sudah diminum ditanyakan dan penggunaan ibuprofen terungkap.',
+        missed: 'Obat yang sudah diminum tidak ditanyakan.',
+      }, { improve: 'Tanyakan obat penurun panas yang sudah diminum; OAINS tidak dianjurkan pada dengue.' }),
+      crit('an-04', 'anamnesis', 1, 'Riwayat epidemiologi', P.asked(['kontak-dbd', 'riwayat-dbd']), {
+        met: 'Kontak dan riwayat dengue ditanyakan.',
+        missed: 'Riwayat epidemiologi tidak ditanyakan.',
+      }, { improve: 'Tanyakan kontak sakit sekitar dan riwayat dengue sebelumnya (risiko infeksi sekunder).' }),
+      crit('pe-01', 'pemeriksaan', 3, 'Menilai sirkulasi', P.examined(['nadi', 'akral-crt'], 2), {
+        met: 'Nadi, tekanan nadi, akral, dan CRT dinilai.',
+        partial: 'Hanya sebagian status sirkulasi dinilai.',
+        missed: 'Status sirkulasi tidak dinilai.',
+      }, { partial: P.examined(['nadi', 'akral-crt'], 1), improve: 'Pada dugaan syok, nilai nadi, tekanan nadi, akral, dan CRT lebih dulu.' }),
+      crit('pe-02', 'pemeriksaan', 2, 'Abdomen dan paru (hepatomegali, efusi)', P.examined(['abdomen', 'paru'], 2), {
+        met: 'Hepar dan paru diperiksa.',
+        partial: 'Hanya abdomen atau paru yang diperiksa.',
+        missed: 'Abdomen dan paru tidak diperiksa.',
+      }, { partial: P.examined(['abdomen', 'paru'], 1), improve: 'Cari hepatomegali, asites, dan efusi pleura sebagai tanda kebocoran plasma.' }),
+      crit('pe-03', 'pemeriksaan', 1, 'Kulit (petekie)', P.examined(['kulit']), {
+        met: 'Kulit diperiksa.',
+        missed: 'Kulit tidak diperiksa.',
+      }, { improve: 'Periksa kulit untuk petekie dan ruam.' }),
+      crit('pn-01', 'penalaran', 2, 'Darah perifer lengkap (Hb, Ht, trombosit)', P.ordered(['dpl']), {
+        met: 'Darah perifer lengkap dipesan.',
+        missed: 'Darah perifer lengkap tidak dipesan.',
+      }, { ref: 'kemenkes-pnpk-dengue', improve: 'Hematokrit dan trombosit adalah kunci memantau kebocoran plasma.' }),
+      crit('pn-02', 'penalaran', 2, 'Konfirmasi dengue', P.ordered(['ns1', 'igm-igg-dengue']), {
+        met: 'Pemeriksaan konfirmasi dengue dipesan.',
+        missed: 'Pemeriksaan konfirmasi dengue tidak dipesan.',
+      }, { ref: 'who-dengue-2009', improve: 'NS1 atau serologi mendukung diagnosis, tetapi jangan menunda resusitasi.' }),
+      crit('pn-03', 'penalaran', 3, 'Diagnosis dengue dengan syok', P.dx, {
+        met: 'Diagnosis DBD dengan syok benar.',
+        missed: 'Diagnosis tidak sesuai dengan fase kritis dan tanda syok.',
+      }, { ref: 'kemenkes-pnpk-dengue', improve: 'Demam turun, tekanan nadi sempit, dan akral dingin adalah syok dengue.' }),
+      crit('pn-04', 'penalaran', 1, 'Menyingkirkan malaria', P.ordered(['rdt-malaria', 'apusan-malaria']), {
+        met: 'Malaria disingkirkan.',
+        missed: 'Diagnosis banding malaria tidak diperiksa.',
+      }, { improve: 'Di daerah endemis pertimbangkan malaria sebagai diagnosis banding demam.' }),
+      crit('pn-05', 'penalaran', 1, 'Triase zona merah', { kind: 'triage', equals: 'correct' }, {
+        met: 'Pasien ditempatkan di zona merah.',
+        missed: 'Zona triase tidak sesuai kegawatan.',
+      }, { improve: 'Tanda syok membuat pasien masuk zona merah.' }),
+      crit('tr-01', 'terapi', 3, 'Resusitasi kristaloid isotonik', P.treated(['kristaloid-bolus']), {
+        met: 'Kristaloid bolus diberikan.',
+        missed: 'Resusitasi cairan tidak diberikan.',
+      }, { ref: 'who-dengue-2009', improve: 'Syok dengue memerlukan bolus kristaloid isotonik segera lalu dititrasi.', highlight: 'Resusitasi cairan diberikan cepat dan tepat.' }),
+      crit('tr-02', 'terapi', 1, 'Akses vena dan monitoring', P.treated(['akses-iv', 'monitor'], undefined, 2), {
+        met: 'Akses IV dan monitoring dipasang.',
+        partial: 'Hanya salah satu dari akses IV atau monitoring.',
+        missed: 'Akses IV dan monitoring tidak dipasang.',
+      }, { partial: P.treated(['akses-iv', 'monitor'], undefined, 1), improve: 'Pasang akses IV dan monitor tanda vital kontinu.' }),
+      crit('tr-03', 'terapi', 2, 'Disposisi perawatan intensif', P.dispo, {
+        met: 'Pasien dirawat di ICU.',
+        partial: 'Dirawat di ruang monitor ketat (HCU), cukup acceptable.',
+        missed: 'Disposisi tidak sesuai dengan syok.',
+      }, { partial: { kind: 'disposition', equals: 'acceptable' }, ref: 'kemenkes-pnpk-dengue', improve: 'Syok dengue memerlukan perawatan intensif atau monitor ketat.' }),
+      crit('tr-04', 'terapi', 1, 'Terapi simtomatik aman', P.treated(['parasetamol']), {
+        met: 'Parasetamol diberikan untuk gejala.',
+        missed: 'Terapi simtomatik tidak diberikan.',
+      }, { improve: 'Parasetamol adalah antipiretik pilihan pada dengue.' }),
+      crit('ks-01', 'keselamatan', 3, 'Bolus cairan dalam 5 menit sejak masuk bed', P.treated(['kristaloid-bolus'], 300), {
+        met: 'Resusitasi cairan diberikan dalam batas waktu.',
+        missed: 'Resusitasi cairan terlambat atau tidak diberikan.',
+      }, { ref: 'who-dengue-2009', improve: 'Pada syok dengue setiap menit menentukan; mulai cairan dalam 5 menit.' }),
+      crit('ks-02', 'keselamatan', 3, 'Tidak memberi OAINS atau diuretik', P.not(P.treated('contraindicated')), {
+        met: 'Tidak ada obat kontraindikasi.',
+        missed: 'Obat kontraindikasi (OAINS atau diuretik) diberikan.',
+      }, { ref: 'kemenkes-pnpk-dengue', improve: 'Hindari OAINS dan diuretik pada dengue dengan syok.' }),
+      crit('ks-03', 'keselamatan', 3, 'Pasien selamat', P.survived, {
+        met: 'Pasien selamat sampai disposisi.',
+        missed: 'Pasien meninggal selama penanganan.',
+      }, { improve: 'Percepat resusitasi cairan untuk mencegah syok dekompensasi.' }),
+      safetyNetCriterion(1),
+    ],
+    breaches: [
+      { id: 'br-kontra', when: P.treated('contraindicated'), what: 'Memberikan OAINS atau diuretik pada dengue dengan syok.', guidelineRef: 'kemenkes-pnpk-dengue' },
+      { id: 'br-pulang', when: { kind: 'disposition', equals: 'pulang' }, what: 'Memulangkan pasien dengue dengan tanda syok.', guidelineRef: 'who-dengue-2009' },
+      { id: 'br-tanpa-kritis', when: P.not(P.treated('critical')), what: 'Tidak memberikan resusitasi cairan pada syok dengue.', guidelineRef: 'who-dengue-2009' },
+    ],
+    teachingPoints: [
+      'Fase kritis dengue dimulai saat demam turun; waspadai tanda bahaya dan kebocoran plasma.',
+      'Hematokrit meningkat dengan trombosit menurun menandakan kebocoran plasma.',
+      'Syok dengue ditangani dengan kristaloid isotonik segera, dititrasi menurut respons.',
+    ],
+  }),
+}

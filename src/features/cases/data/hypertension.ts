@@ -1,0 +1,200 @@
+// Kasus 5 (Poliklinik): hipertensi tidak terkontrol karena putus obat dan faktor pencetus. SINTETIS.
+// Konsultan medis harus memvalidasi regimen, dosis, dan target tekanan darah sebelum dipakai di luar simulasi.
+
+import { buildRubric, crit, defaultFallbacks, exam, iceEntries, makeTests, P, pickDispositions, pickTreatments, q, safetyNetCriterion, vitals } from '../builders'
+import type { Case } from '../types'
+
+const MODE = 'poli' as const
+
+export const hypertensionCase: Case = {
+  id: 'poli-hipertensi',
+  mode: MODE,
+  specialty: 'Penyakit Dalam / Kardiovaskular',
+  difficulty: 'mudah',
+  synthetic: true,
+  severity: 'urgent',
+  title: 'Darah tinggi yang tidak terkontrol',
+  patient: { name: 'Murni Handayani', age: 57, gender: 'F', occupation: 'Ibu rumah tangga' },
+  arrivalBlurb: 'Perempuan 57 tahun dengan darah tinggi sejak 5 tahun, tengkuk tegang dan pusing seminggu ini.',
+  chiefComplaint: 'Tengkuk saya berat dan kepala pusing, Dok, tensi saya tinggi lagi.',
+  vitals: vitals(84, '168/102', 18, 98, 36.6),
+  initialTrust: 52,
+  greeting: 'Selamat pagi, Dok.',
+  farewell: 'Terima kasih, Dok. Saya akan minum obatnya teratur dan kurangi garam.',
+  fallbacks: defaultFallbacks(),
+  dialogue: [
+    q('keluhan-utama', 'rps', 'Keluhan utama Ibu apa?', 'Tengkuk terasa berat dan kepala pusing, Dok. Tensi saya di puskesmas kemarin 170.', ['keluhan utama', 'apa keluhan', 'keluhan apa', 'ada keluhan', 'cerita keluhan', 'mengapa datang']),
+    q('onset', 'rps', 'Keluhan ini sejak kapan?', 'Sudah seminggu ini, Dok, terutama pagi hari.', ['sejak kapan', 'kapan mulai', 'sudah berapa lama', 'berapa lama', 'mulai kapan']),
+    q('nyeri-kepala', 'rps', 'Seperti apa pusing atau sakit kepalanya? Apakah berputar atau berat seperti diikat?', 'Berat seperti diikat, Dok, bukan berputar. Hilang sebentar kalau saya istirahat.', ['nyeri kepala', 'pusing', 'seperti apa pusing', 'sakit kepala', 'kepala', 'berputar']),
+    q('nyeri-dada', 'rps', 'Apakah ada nyeri dada atau jantung berdebar?', 'Tidak ada nyeri dada, Dok. Kadang berdebar kalau kaget saja.', ['nyeri dada', 'dada sakit', 'berdebar', 'jantung berdebar', 'dada'], { red: true }),
+    q('sesak', 'rps', 'Apakah ada sesak napas, terutama saat berbaring atau aktivitas?', 'Tidak, Dok.', ['sesak', 'napas', 'sesak berbaring'], { red: true }),
+    q('defisit-neuro', 'rps', 'Apakah ada kelemahan separuh badan, bicara pelo, atau mulut mencong?', 'Tidak ada, Dok. Tangan dan kaki normal.', ['lemah separuh', 'bicara pelo', 'mulut mencong', 'kelemahan', 'lumpuh', 'kebas', 'kesemutan'], { red: true }),
+    q('penglihatan', 'rps', 'Apakah penglihatan Ibu kabur atau ada gangguan melihat?', 'Agak kabur sedikit kalau membaca, Dok, tapi sudah lama.', ['penglihatan', 'mata kabur', 'pandangan', 'melihat', 'mata'], { red: true }),
+    q('nokturia', 'rps', 'Apakah sering buang air kecil malam hari atau ada bengkak di kaki?', 'Kadang bangun satu kali malam hari. Kaki tidak bengkak.', ['kencing malam', 'sering kencing', 'bengkak kaki', 'kencing', 'nokturia', 'edema']),
+    q('kepatuhan', 'obat', 'Apakah obat tensinya diminum teratur? Kapan terakhir minum?', 'Hmm... sebenarnya sudah dua minggu saya berhenti, Dok. Obat habis, uangnya buat kebutuhan lain. Saya juga takut ketergantungan obat seumur hidup.', ['minum teratur', 'teratur', 'kepatuhan', 'terakhir minum', 'berhenti', 'lupa minum', 'putus obat', 'obat habis', 'rutin'], { gate: [58, 'Diminum, Dok, kadang-kadang saja.'] }),
+    q('obat-rutin', 'obat', 'Obat tekanan darah apa yang Ibu minum?', 'Amlodipin 5 miligram, Dok, satu kali sehari.', ['obat tensi', 'obat hipertensi', 'minum obat apa', 'obat apa', 'obat rutin', 'amlodipin', 'obat darah tinggi']),
+    q('obat-sebelumnya', 'obat', 'Apakah dulu pernah ganti obat tensi? Ada efek samping seperti batuk?', 'Dulu pernah minum kaptopril, Dok, tapi batuk kering terus jadi diganti.', ['ganti obat', 'obat sebelumnya', 'kaptopril', 'efek samping', 'batuk kering', 'pernah obat lain', 'obat lain']),
+    q('obat-nsaid', 'obat', 'Apakah Ibu minum obat pegal, jamu, atau obat nyeri lain?', 'Saya sering minum obat pegal lutut dari warung, Dok, diklofenak kalau lutut sakit, hampir tiap hari seminggu ini.', ['obat pegal', 'obat nyeri', 'jamu', 'nyeri sendi', 'obat warung', 'obat lain', 'diklofenak', 'antalgin', 'obat linu', 'suplemen']),
+    q('diet-garam', 'sosial', 'Bagaimana pola makan Ibu? Apakah suka makanan asin?', 'Saya suka ikan asin dan kerupuk, Dok, masakan agak asin supaya enak.', ['pola makan', 'makanan asin', 'garam', 'ikan asin', 'diet', 'makan asin']),
+    q('olahraga', 'sosial', 'Apakah Ibu berolahraga?', 'Jarang, Dok. Paling jalan ke pasar.', ['olahraga', 'aktivitas', 'senam', 'jalan kaki']),
+    q('stres', 'sosial', 'Apakah belakangan ini ada beban pikiran atau sulit tidur?', 'Ada, Dok, anak saya belum dapat kerja. Tidur jadi sering terbangun.', ['beban pikiran', 'stres', 'sulit tidur', 'tidur', 'pikiran', 'masalah']),
+    ...iceEntries(
+      'Saya kira karena kecapekan dan banyak pikiran, Dok.',
+      'Saya takut stroke, Dok. Ibu saya dulu stroke dan lumpuh.',
+      'Saya mau tensi turun tapi obatnya jangan mahal, Dok.',
+    ),
+    q('rpd-ht', 'rpd', 'Sejak kapan Ibu menderita darah tinggi?', 'Sudah lima tahun, Dok.', ['sejak kapan hipertensi', 'menderita hipertensi', 'riwayat hipertensi', 'hipertensi', 'tensi', 'riwayat penyakit', 'penyakit dahulu']),
+    q('rpd-dm', 'rpd', 'Apakah ada riwayat kencing manis?', 'Gula saya agak tinggi katanya tahun lalu, Dok, tapi tidak diobati.', ['riwayat diabetes', 'diabetes', 'gula', 'kencing manis']),
+    q('rpd-ginjal', 'rpd', 'Apakah ada riwayat sakit ginjal atau jantung?', 'Tidak ada, Dok.', ['riwayat ginjal', 'penyakit ginjal', 'sakit ginjal', 'penyakit jantung', 'riwayat jantung', 'jantung']),
+    q('keluarga', 'keluarga', 'Apakah ada riwayat darah tinggi, stroke, atau kencing manis di keluarga?', 'Ibu saya darah tinggi dan stroke, Dok. Kakak saya kencing manis.', ['riwayat keluarga', 'keluarga stroke', 'keluarga hipertensi', 'keluarga sakit', 'keluarga']),
+    q('alergi-obat', 'alergi', 'Apakah Ibu punya alergi obat?', 'Tidak ada, Dok.', ['alergi obat', 'alergi']),
+    q('merokok', 'sosial', 'Apakah Ibu merokok atau minum alkohol?', 'Tidak, Dok. Suami saya perokok.', ['rokok', 'merokok', 'alkohol'], { distractor: true }),
+    q('demam', 'rps', 'Apakah ada demam atau batuk pilek?', 'Tidak, Dok.', ['demam', 'batuk', 'pilek'], { distractor: true }),
+  ],
+  exam: [
+    exam('tekanan-darah', 'umum', 'Tekanan darah ulang (kedua lengan, duduk tenang)', 'Lengan kanan 166/100, lengan kiri 164/98 mmHg setelah istirahat 5 menit.', { abnormal: true }),
+    exam('umum', 'umum', 'Keadaan umum dan IMT', 'Compos mentis, tampak baik. BB 74 kg, TB 160 cm, IMT 28,9.', { abnormal: true }),
+    exam('fundus', 'kepala-leher', 'Funduskopi', 'Penyempitan arteriol, tidak ada perdarahan retina atau papiledema (retinopati hipertensi derajat 1).', { abnormal: true }),
+    exam('jantung', 'jantung', 'Jantung', 'Iktus kordis kuat di ICS V linea midklavikula kiri, S1 S2 reguler, S4 (+), tidak ada murmur.', { abnormal: true }),
+    exam('paru', 'paru', 'Paru', 'Vesikuler, tidak ada ronki maupun mengi.'),
+    exam('abdomen', 'abdomen', 'Abdomen', 'Datar, lemas, tidak ada bising arteri renalis, ginjal tidak teraba.'),
+    exam('neuro', 'neurologi', 'Neurologi', 'Kekuatan motorik 5/5, tidak ada defisit fokal, saraf kranial normal.'),
+    exam('ekstremitas', 'ekstremitas', 'Ekstremitas', 'Tidak ada edema tungkai, nadi perifer teraba simetris.'),
+    exam('tiroid', 'kepala-leher', 'Tiroid', 'Tidak teraba pembesaran.', { distractor: true }),
+  ],
+  tests: makeTests(MODE, [
+    ['ekg', [{ text: 'EKG: irama sinus 82x/menit, voltase tinggi (S V1 + R V5 lebih dari 35 mm) dengan strain ST-T di V5-V6. Kesan: hipertrofi ventrikel kiri.', abnormal: true, imageId: 'ecg-lvh' }]],
+    ['ureum-kreatinin', [{ text: 'Ureum 33, kreatinin 1,0 mg/dL, eGFR sekitar 63 mL/menit.', abnormal: true }]],
+    ['elektrolit', [{ text: 'Na 140, K 4,2, Cl 104 mmol/L (normal). Tidak ada hipokalemia.', abnormal: false }]],
+    ['urinalisis', [{ text: 'Urinalisis: protein +1, glukosa negatif, eritrosit negatif.', abnormal: true }]],
+    ['uacr', [{ text: 'Rasio albumin-kreatinin urin 48 mg/g (mikroalbuminuria).', abnormal: true }]],
+    ['gula-puasa', [{ text: 'Glukosa darah puasa 108 mg/dL.', abnormal: true }]],
+    ['lipid', [{ text: 'Kolesterol total 232, LDL 148, HDL 46, trigliserida 190 mg/dL.', abnormal: true }]],
+    ['dpl', [{ text: 'Hb 13,2 g/dL, leukosit 7.400/uL, trombosit 280.000/uL.', abnormal: false }]],
+    ['foto-toraks', [{ text: 'Foto toraks: kardiomegali ringan (CTR 55%), paru bersih.', abnormal: true, imageId: 'cxr-mild-cardiomegaly' }]],
+    'ct-kepala',
+  ]),
+  panels: [
+    { id: 'panel-hipertensi', label: 'Panel kerusakan organ target', testIds: ['ekg', 'ureum-kreatinin', 'elektrolit', 'urinalisis', 'uacr', 'gula-puasa', 'lipid'] },
+  ],
+  diagnoses: [
+    { id: 'htn-tidak-terkontrol', label: 'Hipertensi derajat 2 tidak terkontrol' },
+    { id: 'htn-emergensi', label: 'Krisis hipertensi, emergensi' },
+    { id: 'htn-urgensi', label: 'Krisis hipertensi, urgensi' },
+    { id: 'htn-sekunder', label: 'Hipertensi sekunder (renovaskular)' },
+    { id: 'hipertensi-jas-putih', label: 'Hipertensi jas putih' },
+  ],
+  correctDiagnosisId: 'htn-tidak-terkontrol',
+  differentialIds: ['htn-emergensi', 'htn-urgensi', 'htn-sekunder', 'hipertensi-jas-putih'],
+  treatments: pickTreatments([
+    'telmisartan-40',
+    'amlodipin-5',
+    'hct-12',
+    'bisoprolol-5',
+    'edukasi-garam',
+    'nifedipin-sl',
+    'diklofenak',
+    'ibuprofen',
+    'parasetamol',
+  ]),
+  indicatedTreatmentIds: ['telmisartan-40', 'amlodipin-5', 'edukasi-garam'],
+  criticalTreatmentIds: ['telmisartan-40', 'amlodipin-5'],
+  contraindicated: [
+    { id: 'nifedipin-sl', reason: 'Nifedipin sublingual menurunkan tekanan darah terlalu cepat dan tidak dianjurkan, apalagi pada pasien tanpa krisis.' },
+    { id: 'diklofenak', reason: 'OAINS menaikkan tekanan darah dan melemahkan efek antihipertensi serta membebani ginjal.' },
+    { id: 'ibuprofen', reason: 'OAINS menaikkan tekanan darah dan membebani ginjal.' },
+  ],
+  dispositions: pickDispositions(['pulang-kontrol', 'pulang', 'observasi-igd', 'rawat-bangsal']),
+  correctDispositionId: 'pulang-kontrol',
+  acceptableDispositionIds: [],
+  guidelineIds: ['perhi-hipertensi', 'esc-esh-htn-2018', 'kemenkes-pnpk-htn'],
+  rubric: buildRubric({
+    criteria: [
+      crit('an-01', 'anamnesis', 2, 'Gejala dan onset', P.asked(['onset', 'nyeri-kepala'], 2), {
+        met: 'Onset dan karakter keluhan ditanyakan.',
+        partial: 'Hanya sebagian keluhan digali.',
+        missed: 'Keluhan tidak digali.',
+      }, { partial: P.asked(['onset', 'nyeri-kepala'], 1), improve: 'Tanyakan onset dan karakter pusing atau sakit kepala.' }),
+      crit('an-02', 'anamnesis', 3, 'Kepatuhan dan sebab putus obat', P.asked(['kepatuhan', 'obat-rutin'], 2), {
+        met: 'Kepatuhan dan obat yang diminum ditanyakan, alasan putus obat terungkap.',
+        partial: 'Obat ditanyakan tetapi kepatuhan tidak terungkap.',
+        missed: 'Kepatuhan minum obat tidak ditanyakan.',
+      }, { partial: P.asked(['obat-rutin', 'kepatuhan'], 1), ref: 'perhi-hipertensi', improve: 'Tanyakan terakhir kali minum obat tanpa menghakimi; alasan putus obat sering biaya dan ketakutan.', highlight: 'Anda menemukan alasan pasien berhenti minum obat.' }),
+      crit('an-03', 'anamnesis', 2, 'Tanda bahaya kerusakan organ target', P.asked(['nyeri-dada', 'sesak', 'defisit-neuro', 'penglihatan'], 3), {
+        met: 'Tanda bahaya jantung, otak, dan mata ditanyakan.',
+        partial: 'Sebagian tanda bahaya ditanyakan.',
+        missed: 'Tanda bahaya kerusakan organ target tidak ditanyakan.',
+      }, { partial: P.asked(['nyeri-dada', 'sesak', 'defisit-neuro', 'penglihatan'], 2), ref: 'esc-esh-htn-2018', improve: 'Singkirkan krisis: tanyakan nyeri dada, sesak, defisit neurologis, dan gangguan penglihatan.' }),
+      crit('an-04', 'anamnesis', 2, 'Faktor pencetus: garam dan OAINS', P.asked(['diet-garam', 'obat-nsaid'], 2), {
+        met: 'Diet garam dan penggunaan obat nyeri ditanyakan.',
+        partial: 'Hanya salah satu faktor pencetus ditanyakan.',
+        missed: 'Faktor pencetus tidak ditanyakan.',
+      }, { partial: P.asked(['diet-garam', 'obat-nsaid'], 1), improve: 'Tanyakan asupan garam dan obat nyeri (OAINS) yang menaikkan tekanan darah.' }),
+      crit('an-05', 'anamnesis', 1, 'Komorbid', P.asked(['rpd-dm', 'rpd-ginjal'], 1), {
+        met: 'Komorbid ditanyakan.',
+        missed: 'Komorbid tidak ditanyakan.',
+      }, { improve: 'Tanyakan diabetes dan penyakit ginjal: memengaruhi pilihan obat.' }),
+      crit('an-06', 'anamnesis', 1, 'Alergi dan obat sebelumnya', P.asked(['alergi-obat', 'obat-sebelumnya']), {
+        met: 'Alergi dan obat sebelumnya ditanyakan.',
+        missed: 'Alergi dan obat sebelumnya tidak ditanyakan.',
+      }, { improve: 'Riwayat batuk akibat penghambat ACE membantu memilih ARB.' }),
+      crit('pe-01', 'pemeriksaan', 2, 'Mengulang pengukuran tekanan darah', P.examined(['tekanan-darah']), {
+        met: 'Tekanan darah diukur ulang dengan benar.',
+        missed: 'Tekanan darah tidak diukur ulang.',
+      }, { ref: 'perhi-hipertensi', improve: 'Ukur ulang tekanan darah setelah istirahat dan pada kedua lengan.' }),
+      crit('pe-02', 'pemeriksaan', 2, 'Funduskopi dan jantung', P.examined(['fundus', 'jantung'], 2), {
+        met: 'Fundus dan jantung diperiksa.',
+        partial: 'Hanya salah satu dari fundus atau jantung diperiksa.',
+        missed: 'Fundus dan jantung tidak diperiksa.',
+      }, { partial: P.examined(['fundus', 'jantung'], 1), improve: 'Periksa fundus dan jantung untuk kerusakan organ target.' }),
+      crit('pe-03', 'pemeriksaan', 1, 'Neurologi', P.examined(['neuro']), {
+        met: 'Neurologi diperiksa.',
+        missed: 'Neurologi tidak diperiksa.',
+      }, { improve: 'Periksa neurologi untuk menyingkirkan defisit fokal.' }),
+      crit('pn-01', 'penalaran', 3, 'Penilaian kerusakan organ target', P.ordered(['ekg', 'ureum-kreatinin', 'urinalisis', 'uacr'], 3), {
+        met: 'EKG dan penilaian ginjal dipesan.',
+        partial: 'Sebagian penilaian organ target dipesan.',
+        missed: 'Kerusakan organ target tidak dinilai.',
+      }, { partial: P.ordered(['ekg', 'ureum-kreatinin', 'urinalisis', 'uacr'], 2), ref: 'perhi-hipertensi', improve: 'Pesan EKG, kreatinin, dan urinalisis atau UACR.' }),
+      crit('pn-02', 'penalaran', 2, 'Elektrolit, gula, lipid', P.ordered(['elektrolit', 'gula-puasa', 'lipid'], 2), {
+        met: 'Elektrolit, gula, atau lipid dipesan.',
+        missed: 'Pemeriksaan metabolik tidak dipesan.',
+      }, { improve: 'Pesan elektrolit, gula darah, dan profil lipid untuk risiko kardiovaskular.' }),
+      crit('pn-03', 'penalaran', 3, 'Diagnosis hipertensi tidak terkontrol', P.dx, {
+        met: 'Diagnosis benar.',
+        missed: 'Diagnosis tidak sesuai.',
+      }, { ref: 'perhi-hipertensi', improve: 'Tanpa kerusakan organ akut, ini hipertensi tidak terkontrol, bukan krisis hipertensi.' }),
+      crit('pn-04', 'penalaran', 1, 'Pemeriksaan efisien', P.not(P.ordered(['ct-kepala'])), {
+        met: 'Tidak ada pemeriksaan yang tidak perlu.',
+        missed: 'CT kepala dipesan tanpa indikasi.',
+      }, { improve: 'CT kepala tidak diperlukan tanpa defisit neurologis.' }),
+      crit('tr-01', 'terapi', 3, 'Kombinasi ARB dan penghambat kanal kalsium', P.treated(['telmisartan-40', 'amlodipin-5'], undefined, 2), {
+        met: 'Kombinasi ARB dan amlodipin diresepkan.',
+        partial: 'Monoterapi diresepkan; kombinasi dianjurkan pada tekanan darah derajat 2.',
+        missed: 'Antihipertensi yang sesuai tidak diresepkan.',
+      }, { partial: P.treated(['telmisartan-40', 'amlodipin-5'], undefined, 1), ref: 'esc-esh-htn-2018', improve: 'Pada hipertensi derajat 2, mulai kombinasi ARB atau ACEi dengan CCB; ARB dipilih karena batuk dengan kaptopril.', highlight: 'Kombinasi obat sesuai pedoman dan riwayat batuk akibat ACEi.' }),
+      crit('tr-02', 'terapi', 2, 'Edukasi gaya hidup dan kepatuhan', P.treated(['edukasi-garam']), {
+        met: 'Edukasi diet rendah garam dan kepatuhan diberikan.',
+        missed: 'Edukasi tidak diberikan.',
+      }, { ref: 'perhi-hipertensi', improve: 'Edukasi kurangi garam, aktivitas fisik, dan pentingnya minum obat teratur.' }),
+      crit('tr-03', 'terapi', 2, 'Rawat jalan dengan kontrol 2 minggu', P.dispo, {
+        met: 'Pasien pulang dengan jadwal kontrol.',
+        missed: 'Disposisi tidak sesuai.',
+      }, { improve: 'Tanpa kerusakan organ akut, pasien dapat rawat jalan dan kontrol 2 minggu.' }),
+      crit('ks-01', 'keselamatan', 3, 'Tidak memberi nifedipin sublingual atau OAINS', P.not(P.treated('contraindicated')), {
+        met: 'Tidak ada obat kontraindikasi.',
+        missed: 'Obat kontraindikasi diberikan.',
+      }, { ref: 'esc-esh-htn-2018', improve: 'Hindari penurunan tekanan darah mendadak dan OAINS.' }),
+      safetyNetCriterion(2, 'perhi-hipertensi'),
+    ],
+    breaches: [
+      { id: 'br-kontra', when: P.treated('contraindicated'), what: 'Memberikan nifedipin sublingual atau OAINS pada hipertensi.', guidelineRef: 'esc-esh-htn-2018' },
+      { id: 'br-tanpa-obat', when: P.not(P.treated(['telmisartan-40', 'amlodipin-5', 'hct-12'])), what: 'Tidak memberikan antihipertensi pada tekanan darah 168/102 mmHg.', guidelineRef: 'perhi-hipertensi' },
+    ],
+    teachingPoints: [
+      'Tekanan darah tinggi yang tidak terkontrol sering disebabkan putus obat; gali alasannya tanpa menghakimi.',
+      'Singkirkan krisis hipertensi dengan menilai kerusakan organ target.',
+      'Pada derajat 2, pertimbangkan kombinasi dua obat dan evaluasi pencetus seperti OAINS dan garam.',
+    ],
+  }),
+}

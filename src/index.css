@@ -1,0 +1,395 @@
+@layer theme, base, components, utilities;
+@import 'tailwindcss';
+@import '@fontsource-variable/plus-jakarta-sans/wght.css';
+
+/* ---------------------------------------------------------------------------
+   MedQuest design tokens. This is the ONLY file that holds raw color values
+   (rule 4.2). White-dominant ground, one calm green primary (sage-emerald).
+   Never pure #000 / #fff as a flat surface or text (rule 8.1).
+   --------------------------------------------------------------------------- */
+:root {
+  /* surfaces (white-dominant, two close tones) */
+  --mq-ground: #f8faf8;
+  --mq-surface: #fdfefd;
+  --mq-panel: #f1f5f2;
+  --mq-inset: #e8eeea;
+
+  /* ink */
+  --mq-ink-1: #14231c;
+  --mq-ink-2: #455a50;
+  --mq-ink-3: #6f8178;
+  --mq-ink-4: #9aa9a1;
+  --mq-ink-on-primary: #f8fbf9;
+
+  /* lines (hairlines instead of shadows) */
+  --mq-line: #dce5df;
+  --mq-line-strong: #c4d1c9;
+
+  /* the single accent: calm sage-emerald (button fill passes AA with light text) */
+  --mq-primary: #287e63;
+  --mq-primary-hover: #236f57;
+  --mq-primary-press: #1e604b;
+  --mq-brand: #2e8b6e; /* large decorative areas only, below AA for small text */
+  --mq-primary-quiet: #e3f0ea;
+
+  /* status (solid badges, never tonal; rule 8.1) */
+  --mq-danger: #c23b3b;
+  --mq-danger-ink: #fbf5f5;
+  --mq-warning: #e0a526;
+  --mq-warning-ink: #2b2208;
+  --mq-success: #4a7a1f;
+  --mq-success-ink: #f7faf3;
+  --mq-neutral: #56665e;
+  --mq-neutral-ink: #f6f8f7;
+
+  /* category hues: a short named set for specialty / case type (see CLAUDE.md 8.3) */
+  --mq-cat-infection: #4a7fb5;
+  --mq-cat-cardio: #cf6459;
+  --mq-cat-endocrine: #cc9a30;
+  --mq-cat-pulmo: #3a9aa0;
+  --mq-cat-neuro: #7f69ad;
+
+  /* AA-safe solid badge fills (white-ish ink 4.5:1+); the raw --mq-cat-* hues stay for illustration */
+  --mq-cat-infection-fill: #3f72a8;
+  --mq-cat-cardio-fill: #bf4f45;
+  --mq-cat-endocrine-fill: #cc9a30; /* takes dark ink */
+  --mq-cat-pulmo-fill: #287a80;
+  --mq-cat-neuro-fill: #77619f;
+
+  /* muted ink for small text (--mq-ink-3 is 3.9:1 on ground, fine only for large text) */
+  --mq-ink-muted: #5c6f65;
+
+  /* quiet illustration tints derived from the hues above (illustration fields only) */
+  --mq-tint-green: #e4f0ea;
+  --mq-tint-blue: #e6eef6;
+  --mq-tint-coral: #f6e8e5;
+  --mq-tint-amber: #f6efdc;
+  --mq-tint-teal: #e1f0f1;
+
+  /* clay 3D palette (read by the three.js scenes through src/lib/clay-palette.ts) */
+  --mq-clay-green: #3f9d7d;
+  --mq-clay-cream: #f3ede1;
+  --mq-clay-sky: #7fb0d8;
+  --mq-clay-coral: #e58c7f;
+  --mq-clay-butter: #f0cf7a;
+
+  /* radii (deliberately not uniform) */
+  --mq-radius-xs: 6px;
+  --mq-radius-sm: 10px;
+  --mq-radius-md: 16px;
+  --mq-radius-lg: 24px;
+  --mq-radius-xl: 36px;
+
+  /* geometry */
+  --mq-shell-nav: 4.25rem;
+  --mq-tap: 44px;
+  --mq-container: 1240px;
+
+  /* motion */
+  --mq-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --mq-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+}
+
+/* shadcn vocabulary bridge. --primary is the brand color, --accent is the subtle hover surface. */
+:root {
+  --background: var(--mq-ground);
+  --foreground: var(--mq-ink-1);
+  --card: var(--mq-surface);
+  --card-foreground: var(--mq-ink-1);
+  --popover: var(--mq-surface);
+  --popover-foreground: var(--mq-ink-1);
+  --primary: var(--mq-primary);
+  --primary-foreground: var(--mq-ink-on-primary);
+  --secondary: var(--mq-panel);
+  --secondary-foreground: var(--mq-ink-1);
+  --muted: var(--mq-panel);
+  --muted-foreground: var(--mq-ink-muted);
+  --accent: var(--mq-panel);
+  --accent-foreground: var(--mq-ink-1);
+  --destructive: var(--mq-danger);
+  --border: var(--mq-line);
+  --input: var(--mq-line-strong);
+  --ring: var(--mq-primary);
+  --radius: var(--mq-radius-sm);
+}
+
+@theme {
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+
+  /* named type scale: size / line-height / tracking set per step (Apple rule 14) */
+  --text-display: clamp(2.75rem, 6.2vw, 5.25rem);
+  --text-display--line-height: 1.02;
+  --text-display--letter-spacing: -0.035em;
+  --text-heading-page: clamp(2rem, 3.6vw, 3.25rem);
+  --text-heading-page--line-height: 1.08;
+  --text-heading-page--letter-spacing: -0.028em;
+  --text-heading-section: clamp(1.5rem, 2.4vw, 2.125rem);
+  --text-heading-section--line-height: 1.15;
+  --text-heading-section--letter-spacing: -0.02em;
+  --text-heading-card: 1.25rem;
+  --text-heading-card--line-height: 1.25;
+  --text-heading-card--letter-spacing: -0.012em;
+  --text-lead: 1.1875rem;
+  --text-lead--line-height: 1.5;
+  --text-lead--letter-spacing: -0.005em;
+  --text-body: 1rem;
+  --text-body--line-height: 1.55;
+  --text-body--letter-spacing: 0em;
+  --text-body-s: 0.875rem;
+  --text-body-s--line-height: 1.5;
+  --text-body-s--letter-spacing: 0.003em;
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.3;
+  --text-label--letter-spacing: 0.04em;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+}
+
+@theme inline {
+  --color-ground: var(--mq-ground);
+  --color-surface: var(--mq-surface);
+  --color-panel: var(--mq-panel);
+  --color-inset: var(--mq-inset);
+  --color-ink-1: var(--mq-ink-1);
+  --color-ink-2: var(--mq-ink-2);
+  --color-ink-3: var(--mq-ink-3);
+  --color-ink-4: var(--mq-ink-4);
+  --color-line: var(--mq-line);
+  --color-line-strong: var(--mq-line-strong);
+  --color-primary: var(--mq-primary);
+  --color-primary-hover: var(--mq-primary-hover);
+  --color-primary-press: var(--mq-primary-press);
+  --color-primary-ink: var(--mq-ink-on-primary);
+  --color-primary-quiet: var(--mq-primary-quiet);
+  --color-brand: var(--mq-brand);
+  --color-danger: var(--mq-danger);
+  --color-danger-ink: var(--mq-danger-ink);
+  --color-warning: var(--mq-warning);
+  --color-warning-ink: var(--mq-warning-ink);
+  --color-success: var(--mq-success);
+  --color-success-ink: var(--mq-success-ink);
+  --color-neutral: var(--mq-neutral);
+  --color-neutral-ink: var(--mq-neutral-ink);
+  --color-cat-infection: var(--mq-cat-infection);
+  --color-cat-cardio: var(--mq-cat-cardio);
+  --color-cat-endocrine: var(--mq-cat-endocrine);
+  --color-cat-pulmo: var(--mq-cat-pulmo);
+  --color-cat-neuro: var(--mq-cat-neuro);
+  --color-cat-infection-fill: var(--mq-cat-infection-fill);
+  --color-cat-cardio-fill: var(--mq-cat-cardio-fill);
+  --color-cat-endocrine-fill: var(--mq-cat-endocrine-fill);
+  --color-cat-pulmo-fill: var(--mq-cat-pulmo-fill);
+  --color-cat-neuro-fill: var(--mq-cat-neuro-fill);
+  --color-ink-muted: var(--mq-ink-muted);
+  --color-tint-green: var(--mq-tint-green);
+  --color-tint-blue: var(--mq-tint-blue);
+  --color-tint-coral: var(--mq-tint-coral);
+  --color-tint-amber: var(--mq-tint-amber);
+  --color-tint-teal: var(--mq-tint-teal);
+  --radius-xs: var(--mq-radius-xs);
+  --radius-sm: var(--mq-radius-sm);
+  --radius-md: var(--mq-radius-md);
+  --radius-lg: var(--mq-radius-lg);
+  --radius-xl: var(--mq-radius-xl);
+  --ease-out-expo: var(--mq-ease-out);
+}
+
+@layer base {
+  * {
+    border-color: var(--mq-line);
+  }
+  html {
+    font-family: var(--font-sans);
+    background: var(--mq-ground);
+    color: var(--mq-ink-1);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--mq-ground);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-optical-sizing: auto;
+    text-wrap: balance;
+  }
+  :focus-visible {
+    outline: 2px solid var(--mq-primary);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--mq-primary-quiet);
+  }
+  button,
+  [role='button'] {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Reduced motion: cross-fades instead of slides and springs (Apple rule 13) */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .mq-translucent {
+    background: var(--mq-surface) !important;
+    backdrop-filter: none !important;
+  }
+}
+
+/* Increased contrast: defined borders and darker secondary ink (Apple rule 13) */
+@media (prefers-contrast: more) {
+  :root {
+    --mq-line: #6f8178;
+    --mq-line-strong: #455a50;
+    --mq-ink-2: #2a3c33;
+    --mq-ink-3: #3e5148;
+    --mq-ink-muted: #3e5148;
+  }
+}
+
+@layer components {
+  .mq-translucent {
+    background: color-mix(in srgb, var(--mq-surface) 78%, transparent);
+    backdrop-filter: blur(14px) saturate(140%);
+    border-bottom: 1px solid var(--mq-line);
+  }
+  .mq-skeleton {
+    background: linear-gradient(
+      100deg,
+      var(--mq-panel) 30%,
+      var(--mq-inset) 50%,
+      var(--mq-panel) 70%
+    );
+    background-size: 200% 100%;
+    animation: mq-shimmer 1.4s linear infinite;
+    border-radius: var(--mq-radius-sm);
+  }
+}
+
+@keyframes mq-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Overlay motion for Radix primitives (src/components/ui). Opacity + transform only. */
+@layer components {
+  .mq-fade[data-state='open'] {
+    animation: mq-fade-in 180ms var(--mq-ease-out);
+  }
+  .mq-fade[data-state='closed'] {
+    animation: mq-fade-out 120ms var(--mq-ease-out) forwards;
+  }
+  .mq-pop[data-state='open'] {
+    animation: mq-pop-in 180ms var(--mq-ease-out);
+  }
+  .mq-pop[data-state='closed'] {
+    animation: mq-pop-out 120ms var(--mq-ease-out) forwards;
+  }
+  .mq-sheet[data-state='open'] {
+    animation: mq-sheet-in 320ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .mq-sheet[data-state='closed'] {
+    animation: mq-sheet-out 220ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+  }
+  .mq-pop-origin {
+    transform-origin: var(--radix-popper-transform-origin);
+  }
+}
+
+@keyframes mq-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes mq-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes mq-pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+@keyframes mq-pop-out {
+  to {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+@keyframes mq-sheet-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes mq-sheet-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mq-pop[data-state],
+  .mq-sheet[data-state] {
+    animation-name: mq-fade-in;
+  }
+  .mq-pop[data-state='closed'],
+  .mq-sheet[data-state='closed'] {
+    animation-name: mq-fade-out;
+  }
+}
+
+/* Disclosure that eases open and closed (landing FAQ). Progressive: unsupported browsers just snap. */
+@supports (interpolate-size: allow-keywords) {
+  .mq-disclosure {
+    interpolate-size: allow-keywords;
+  }
+  .mq-disclosure::details-content {
+    block-size: 0;
+    overflow: hidden;
+    transition:
+      block-size 280ms var(--mq-ease-out),
+      content-visibility 280ms allow-discrete;
+  }
+  .mq-disclosure[open]::details-content {
+    block-size: auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mq-disclosure::details-content {
+    transition: none;
+  }
+}

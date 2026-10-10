@@ -1,0 +1,7 @@
+export { matchReply, answerEntry, findEntry, MATCH_THRESHOLD } from './match'
+export type { MatchResult, MatchOptions, MatchKind } from './match'
+export { classifyTone, detectIntents, isClosedQuestion, isRude, isDismissive, INTENT_RULES } from './tone'
+export type { ToneContext, ToneResult } from './tone'
+export { buildQuestionCatalogue } from './catalogue'
+export type { CatalogueCategory, CatalogueQuestion } from './catalogue'
+export { normalizeText, contentTokens, stem, hashString } from './normalize'
