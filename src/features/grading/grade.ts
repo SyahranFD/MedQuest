@@ -30,19 +30,19 @@ export const BAND_THRESHOLDS: { band: Band; min: number }[] = [
 export const BAND_RANK: Record<Band, number> = { 'clear-fail': 0, borderline: 1, pass: 2, good: 3, excellent: 4 }
 
 export const BAND_HEADLINES: Record<Band, string> = {
-  excellent: 'Sangat baik, penanganan tingkat teratas',
-  good: 'Baik, kasus ditangani dengan solid',
-  pass: 'Lulus, usaha yang baik',
-  borderline: 'Batas lulus, layak diulang',
-  'clear-fail': 'Belum lulus, mari ulangi',
+  excellent: 'Sangat baik, penanganan hampir sempurna',
+  good: 'Baik, kasus ditangani dengan tepat',
+  pass: 'Lulus, tetap ada yang bisa diperbaiki',
+  borderline: 'Batas lulus, sebaiknya diulang',
+  'clear-fail': 'Belum lulus, coba ulangi kasus ini',
 }
 
 const BAND_OPENING: Record<Band, string> = {
-  excellent: 'Penanganan Anda hampir tanpa cela.',
-  good: 'Penanganan Anda solid dengan beberapa hal kecil untuk dirapikan.',
-  pass: 'Anda melewati standar minimal, tetapi masih ada celah yang perlu ditutup.',
-  borderline: 'Anda berada di batas kelulusan; beberapa langkah penting terlewat.',
-  'clear-fail': 'Penanganan belum memenuhi standar minimal untuk kasus ini.',
+  excellent: 'Penanganan Anda hampir sempurna.',
+  good: 'Penanganan Anda sudah baik, tinggal beberapa hal kecil yang bisa dirapikan.',
+  pass: 'Anda sudah melewati standar minimal, tetapi masih ada yang perlu dilengkapi.',
+  borderline: 'Anda tepat di batas lulus karena beberapa langkah penting terlewat.',
+  'clear-fail': 'Penanganan Anda belum memenuhi standar minimal untuk kasus ini.',
 }
 
 export function bandForPercent(percent: number): Band {
@@ -59,7 +59,7 @@ function evidenceText(c: Criterion, verdict: Verdict, log: EncounterLog, kase: C
   const base = verdict === 'met' ? c.evidence.met : verdict === 'partially-met' ? (c.evidence.partial ?? c.evidence.met) : c.evidence.missed
   const detected = collectEvidence(c.partial ? { kind: 'any', of: [c.met, c.partial] } : c.met, log, kase)
   const unique = [...new Set(detected)].slice(0, 4)
-  if (verdict === 'missed' && unique.length === 0) return `${base} Tidak ada yang terdeteksi pada log.`
+  if (verdict === 'missed' && unique.length === 0) return `${base} Tidak ada yang terdeteksi di catatan sesi.`
   return unique.length ? `${base} Terdeteksi: ${unique.join('; ')}.` : base
 }
 
@@ -176,8 +176,8 @@ export function grade(log: EncounterLog, kase: Case): Evaluation {
     BAND_OPENING[band],
     breaches.length ? `Perhatian utama: ${breaches[0].what}` : '',
     highlights.length ? `Yang sudah baik: ${highlights.slice(0, 2).join(' ')}` : '',
-    improvements.length ? `Untuk berikutnya: ${improvements.slice(0, 2).join(' ')}` : '',
-    `Skor empati Anda ${empathy} dari 100. Durasi ${formatClock((log.endedAtSec ?? 0) - log.startedAtSec)}.`,
+    improvements.length ? `Saran perbaikan: ${improvements.slice(0, 2).join(' ')}` : '',
+    `Skor empati Anda ${empathy} dari 100. Lama sesi ${formatClock((log.endedAtSec ?? 0) - log.startedAtSec)}.`,
   ]
     .filter(Boolean)
     .join(' ')

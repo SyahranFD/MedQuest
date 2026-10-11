@@ -1,30 +1,23 @@
 import { Link, useNavigate } from '@tanstack/react-router'
-import { ArrowLeft, BookOpen, FlaskConical, Info, Play } from 'lucide-react'
+import { ArrowLeft, FlaskConical, Play } from 'lucide-react'
 import { useState } from 'react'
 import { ErrorState } from '@/components/page/error-state'
 import { PageBody } from '@/components/page/page-body'
 import { PageHeader } from '@/components/page/page-header'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DIMENSIONS, DIMENSION_LABELS } from '@/features/cases/types'
 import type { Case } from '@/features/cases/types'
 import { citationFor } from '@/features/grading/guidelines'
 import { useLocale } from '@/lib/i18n'
-import { categoryOf, SEVERITY_BADGE, specialtyLabel } from './case-meta'
-import { VitalsGrid } from './exam-panel'
+import { specialtyLabel } from './case-meta'
 import { startCaseSession } from './session-flow'
 import { useCase } from './use-simulator-data'
 import { useST } from './use-st'
+import { VitalsGrid } from './vitals-grid'
 import { CASES_PATH } from './links'
 
-function initials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((p) => p[0])
-    .join('')
-}
+const SECTION_TITLE = 'font-display text-section font-semibold text-ink-1'
 
 export function BriefPage({ caseId }: { caseId: string }) {
   const q = useCase(caseId)
@@ -41,13 +34,15 @@ export function BriefPage({ caseId }: { caseId: string }) {
 
 function BriefSkeleton() {
   return (
-    <PageBody aria-busy="true">
-      <Skeleton className="mb-3 h-5 w-24" />
-      <Skeleton className="mb-8 h-12 w-2/3" />
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <Skeleton className="h-72" />
-        <Skeleton className="h-72" />
+    <PageBody aria-busy="true" className="flex flex-col gap-6">
+      <Skeleton className="h-5 w-24" />
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-5 w-full" />
       </div>
+      <Skeleton className="h-16 w-full" />
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-32 w-full" />
     </PageBody>
   )
 }
@@ -73,118 +68,100 @@ function Brief({ c }: { c: Case }) {
   }
 
   const counts = DIMENSIONS.map((d) => ({ d, n: c.rubric.criteria.filter((x) => x.dimension === d).length })).filter((x) => x.n > 0)
-  const citations = c.guidelineIds.flatMap((id) => citationFor(id) ?? [])
+  const sources = [...new Set(c.guidelineIds.flatMap((id) => citationFor(id) ?? []).map((ct) => ct.issuer.split('(')[0]!.trim()))]
 
   return (
-    <PageBody>
-      <Link to={CASES_PATH} className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-body-s font-medium text-ink-2 hover:text-ink-1">
-        <ArrowLeft className="size-4" aria-hidden="true" />
-        {st('brief.back')}
-      </Link>
-      <PageHeader
-        eyebrow={
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="category" category={categoryOf(c)}>
-              {specialtyLabel(c)}
-            </Badge>
-            <Badge variant="neutral">{st(`mode.${c.mode}`)}</Badge>
-            <Badge variant="neutral">{st(`difficulty.${c.difficulty}`)}</Badge>
-            <Badge variant={SEVERITY_BADGE[c.severity]}>{st(`severity.${c.severity}`)}</Badge>
-          </div>
-        }
-        title={c.title}
-        description={c.arrivalBlurb}
-      />
+    <PageBody className="flex flex-col gap-8">
+      <div className="flex flex-col gap-4">
+        <Link to={CASES_PATH} className="-ml-1 inline-flex w-fit items-center gap-1.5 rounded-row px-1 text-body-s font-medium text-ink-3 hover:text-ink-1 pointer-coarse:min-h-11">
+          <ArrowLeft className="size-4" aria-hidden="true" />
+          {st('brief.back')}
+        </Link>
+        <PageHeader
+          className="pb-0"
+          title={c.title}
+          description={c.arrivalBlurb}
+          toolbar={
+            <div className="flex w-full flex-col items-start gap-4">
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-3">
+                <span>{specialtyLabel(c)}</span>
+                <span aria-hidden="true">/</span>
+                <span>{st(`mode.${c.mode}`)}</span>
+                <span aria-hidden="true">/</span>
+                <span>{st(`difficulty.${c.difficulty}`)}</span>
+              </p>
+              <Button onClick={() => void start()} disabled={busy} data-testid="start-case">
+                <Play aria-hidden="true" />
+                {busy ? st('brief.starting') : st(isEr ? 'brief.startEr' : 'brief.startPoli')}
+              </Button>
+            </div>
+          }
+        />
+        {failed && <ErrorState className="py-6" description={st('brief.startFailed')} onRetry={() => void start()} />}
+      </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex flex-col gap-6">
-          <section aria-label={st('brief.complaint')} className="flex flex-col gap-2">
-            <h2 className="text-label font-semibold text-ink-muted uppercase">{st('brief.complaint')}</h2>
-            <blockquote className="rounded-md border border-line bg-surface p-4 font-display text-heading-card font-medium text-ink-1">
-              &ldquo;{c.chiefComplaint}&rdquo;
-            </blockquote>
-          </section>
-
-          <section aria-label={st('brief.objectives')} className="flex flex-col gap-2">
-            <h2 className="text-label font-semibold text-ink-muted uppercase">{st('brief.objectives')}</h2>
-            <ul className="flex list-disc flex-col gap-1.5 pl-5 text-body text-ink-2">
-              {c.rubric.teachingPoints.slice(0, 4).map((p) => (
-                <li key={p}>{p}</li>
-              ))}
-            </ul>
-          </section>
-
-          <section aria-label={st('brief.graded')} className="flex flex-col gap-3">
-            <h2 className="text-label font-semibold text-ink-muted uppercase">{st('brief.graded')}</h2>
-            <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {counts.map(({ d, n }) => (
-                <li key={d} className="flex flex-col gap-0.5 rounded-sm border border-line bg-surface p-3">
-                  <span className="text-body-s font-semibold text-ink-1">{locale === 'en' ? (DIMENSION_LABELS[d].en ?? DIMENSION_LABELS[d].id) : DIMENSION_LABELS[d].id}</span>
-                  <span className="text-label text-ink-muted">{st('brief.criteria', { n })}</span>
-                </li>
-              ))}
-            </ul>
-            {citations.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1.5 text-label font-medium text-ink-muted">
-                  <BookOpen className="size-3.5" aria-hidden="true" />
-                  {st('brief.sources')}
-                </span>
-                {citations.map((ct) => (
-                  <Badge key={ct.id} variant="neutral">
-                    {ct.issuer.split('(')[0]!.trim()}
-                  </Badge>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {isEr && (
-            <section aria-label={st('brief.shift')} className="flex flex-col gap-2 rounded-md border border-line bg-panel p-4" data-testid="shift-mechanics">
-              <h2 className="text-body-s font-semibold text-ink-1">{st('brief.shift')}</h2>
-              <ul className="flex list-disc flex-col gap-1.5 pl-5 text-body-s text-ink-2">
-                {(['m1', 'm2', 'm3', 'm4'] as const).map((k) => (
-                  <li key={k}>{st(`brief.shift.${k}`)}</li>
-                ))}
-              </ul>
-            </section>
-          )}
+      <section aria-label={st('brief.patient')} className="flex flex-col gap-3">
+        <h2 className={SECTION_TITLE}>{st('brief.patient')}</h2>
+        <div className="flex flex-col gap-1">
+          <p className="text-body-s font-medium text-ink-1">
+            {c.patient.name}
+            <span className="font-normal text-ink-3">
+              {' '}
+              / {c.patient.age} {st('brief.years')}, {st(c.patient.gender === 'F' ? 'brief.female' : 'brief.male')}, {c.patient.occupation}
+            </span>
+          </p>
+          <blockquote className="font-display text-section font-medium text-ink-1">&ldquo;{c.chiefComplaint}&rdquo;</blockquote>
         </div>
+      </section>
 
-        <aside className="order-first flex flex-col gap-4 lg:order-none">
-          <section aria-label={st('brief.patient')} className="flex flex-col gap-4 rounded-md border border-line bg-surface p-4">
-            <div className="flex items-center gap-3">
-              <span className="grid size-14 place-items-center rounded-full bg-tint-green font-display text-heading-card font-bold text-ink-1" aria-hidden="true">
-                {initials(c.patient.name)}
-              </span>
-              <div className="flex flex-col">
-                <p className="font-display text-heading-card font-semibold text-ink-1">{c.patient.name}</p>
-                <p className="text-body-s text-ink-2">
-                  {c.patient.age} {st('brief.years')}, {st(c.patient.gender === 'F' ? 'brief.female' : 'brief.male')}, {c.patient.occupation}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-col gap-2">
-              <h2 className="text-label font-semibold text-ink-muted uppercase">{st('brief.vitals')}</h2>
-              <VitalsGrid vitals={c.vitals} />
-            </div>
-          </section>
+      <section aria-label={st('brief.vitals')} className="flex flex-col gap-3">
+        <h2 className={SECTION_TITLE}>{st('brief.vitals')}</h2>
+        <VitalsGrid vitals={c.vitals} />
+      </section>
 
-          <p className="flex items-start gap-2.5 rounded-md border border-line-strong p-3.5 text-body-s text-ink-2" data-testid="synthetic-notice">
-            <FlaskConical className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-            {st('brief.synthetic')}
+      <section aria-label={st('brief.objectives')} className="flex flex-col gap-3">
+        <h2 className={SECTION_TITLE}>{st('brief.objectives')}</h2>
+        <ul className="flex list-disc flex-col gap-1.5 pl-5 text-body-s text-ink-2">
+          {c.rubric.teachingPoints.slice(0, 4).map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+      </section>
+
+      <section aria-label={st('brief.graded')} className="flex flex-col gap-3">
+        <h2 className={SECTION_TITLE}>{st('brief.graded')}</h2>
+        <ul className="flex flex-col border-t border-line-soft">
+          {counts.map(({ d, n }) => (
+            <li key={d} className="flex h-10 items-center justify-between gap-3 border-b border-line-soft text-body-s">
+              <span className="text-ink-1">{locale === 'en' ? (DIMENSION_LABELS[d].en ?? DIMENSION_LABELS[d].id) : DIMENSION_LABELS[d].id}</span>
+              <span className="text-meta text-ink-3">{st('brief.criteria', { n })}</span>
+            </li>
+          ))}
+        </ul>
+        {sources.length > 0 && (
+          <p className="text-meta text-ink-3">
+            {st('brief.sources')}: {sources.join(', ')}
           </p>
+        )}
+      </section>
 
-          {failed && <ErrorState className="py-6" description={st('brief.startFailed')} onRetry={() => void start()} />}
-          <Button size="lg" className="w-full" onClick={() => void start()} disabled={busy} data-testid="start-case">
-            <Play aria-hidden="true" />
-            {busy ? st('brief.starting') : st(isEr ? 'brief.startEr' : 'brief.startPoli')}
-          </Button>
-          <p className="flex items-start gap-2 text-label text-ink-muted">
-            <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-            {st('brief.keys')}
-          </p>
-        </aside>
+      {isEr && (
+        <section aria-label={st('brief.shift')} className="flex flex-col gap-3" data-testid="shift-mechanics">
+          <h2 className={SECTION_TITLE}>{st('brief.shift')}</h2>
+          <ul className="flex list-disc flex-col gap-1.5 pl-5 text-body-s text-ink-2">
+            {(['m1', 'm2', 'm3', 'm4'] as const).map((k) => (
+              <li key={k}>{st(`brief.shift.${k}`)}</li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <div className="flex flex-col gap-2 border-t border-line-soft pt-4">
+        <p className="flex items-start gap-2 text-meta text-ink-3" data-testid="synthetic-notice">
+          <FlaskConical className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          {st('brief.synthetic')}
+        </p>
+        <p className="text-meta text-ink-3">{st('brief.keys')}</p>
       </div>
     </PageBody>
   )

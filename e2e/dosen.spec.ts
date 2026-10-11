@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import { seed, watch } from './helpers'
+import { ALL_CASES } from '../src/features/cases/data'
 
 test('lecturer dashboard to student detail', async ({ page }) => {
   await seed(page)
@@ -24,7 +25,7 @@ test('lecturer case library lists guideline sources', async ({ page }) => {
   await seed(page)
   await page.goto('/dosen/perpustakaan')
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Tugaskan ke kelas' })).toHaveCount(6)
+  await expect(page.getByRole('button', { name: 'Tugaskan ke kelas' })).toHaveCount(ALL_CASES.length)
 })
 
 test('student history shows seeded demo sessions', async ({ page }) => {

@@ -35,7 +35,7 @@ export function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          'mq-pop fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border border-line bg-surface p-6',
+          'mq-pop fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-card border border-line bg-raised p-5',
           className,
         )}
         onOpenAutoFocus={(e) => {
@@ -54,7 +54,7 @@ export function DialogContent({
         {!hideClose && (
           <DialogPrimitive.Close
             aria-label={t('common.close')}
-            className="absolute top-3 right-3 grid size-11 place-items-center rounded-sm text-ink-2 transition-colors duration-100 hover:bg-panel hover:text-ink-1 md:size-9"
+            className="absolute top-3 right-3 grid size-11 place-items-center rounded-row text-ink-3 transition-colors duration-100 hover:bg-hover hover:text-ink-1 md:size-9"
           >
             <X className="size-4" strokeWidth={2} />
           </DialogPrimitive.Close>
@@ -82,7 +82,7 @@ export function DialogTitle({ className, ...props }: ComponentProps<typeof Dialo
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn('font-display text-heading-card font-semibold text-ink-1', className)}
+      className={cn('font-display text-section font-semibold text-ink-1', className)}
       {...props}
     />
   )
@@ -95,7 +95,7 @@ export function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn('text-body-s text-ink-2', className)}
+      className={cn('text-body-s text-ink-3', className)}
       {...props}
     />
   )

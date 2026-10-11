@@ -11,7 +11,7 @@ export const legalId = {
   'terms.about.p1':
     'MedQuest adalah demo simulasi pasien untuk mahasiswa kedokteran. Demo dibuat untuk kompetisi 12th CLOSER 2026 dan berjalan sepenuhnya di peramban Anda.',
   'terms.about.p2': 'Dengan memakai demo, Anda menyetujui syarat di halaman ini.',
-  'terms.training.title': 'Alat latihan, bukan keputusan klinis',
+  'terms.training.title': 'Hanya untuk latihan, bukan untuk keputusan klinis',
   'terms.training.p1':
     'MedQuest hanya untuk latihan. Jangan memakai isi demo untuk mendiagnosis, mengobati, atau membuat keputusan pada pasien sungguhan.',
   'terms.training.p2':
@@ -63,7 +63,7 @@ export const legalId = {
     'Pada produk penuh nanti, data mahasiswa akan bersifat pribadi dan hanya terlihat oleh dosen kelas yang bersangkutan. Kebijakan ini akan diperbarui sebelum akun diperkenalkan.',
   'privacy.changes.title': 'Perubahan kebijakan',
   'privacy.changes.p1': 'Kebijakan ini dapat diperbarui. Tanggal pembaruan terakhir tertera di bagian atas halaman.',
-  'privacy.changes.p2': 'Perubahan material akan diumumkan di halaman ini.',
+  'privacy.changes.p2': 'Perubahan penting akan diumumkan di halaman ini.',
 } as const
 
 export const legalEn: Record<keyof typeof legalId, string> = {
@@ -77,7 +77,7 @@ export const legalEn: Record<keyof typeof legalId, string> = {
   'terms.about.p1':
     'MedQuest is a patient simulation demo for medical students. It was built for the 12th CLOSER 2026 competition and runs entirely in your browser.',
   'terms.about.p2': 'By using the demo you agree to the terms on this page.',
-  'terms.training.title': 'A training tool, not a clinical decision tool',
+  'terms.training.title': 'For practice only, not for clinical decisions',
   'terms.training.p1':
     'MedQuest is for practice only. Do not use anything in the demo to diagnose, treat, or make decisions about real patients.',
   'terms.training.p2':

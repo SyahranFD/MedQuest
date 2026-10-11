@@ -31,4 +31,16 @@ describe('DebriefView', () => {
     expect(screen.getAllByTestId('criterion').some((el) => el.dataset.verdict === 'missed')).toBe(true)
     expect(screen.queryByTestId('trust-sparkline')).toBeNull()
   })
+
+  it('opens the dimension groups that hold a miss and keeps fully met ones collapsed', () => {
+    const perfect = buildScriptedLog(c, 'perfect')
+    const { unmount } = render(<DebriefView evaluation={grade(perfect, c)} trace={null} actions={null} />)
+    const groups = (el: HTMLElement) => Array.from(el.querySelectorAll('details')).slice(0, 6)
+    expect(groups(document.body).every((d) => !d.open)).toBe(true)
+    unmount()
+    const bad = render(<DebriefView evaluation={grade(buildScriptedLog(c, 'bad'), c)} trace={null} actions={null} />)
+    const open = groups(bad.container).filter((d) => d.open)
+    expect(open.length).toBeGreaterThan(0)
+    for (const d of open) expect(within(d).getAllByTestId('criterion').some((el) => el.dataset.verdict !== 'met')).toBe(true)
+  })
 })

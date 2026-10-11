@@ -41,7 +41,21 @@ export async function startPoli(page: Page) {
   await page.getByRole('link', { name: /Batuk lebih dari tiga minggu/ }).click()
   await page.getByRole('button', { name: 'Mulai konsultasi' }).click()
   await expect(page).toHaveURL(/\/app\/sesi\//)
-  await expect(page.getByTestId('anamnesis-panel')).toBeVisible()
+  await expect(page.getByTestId('hud-dock')).toBeVisible()
+}
+
+/** The doctor's tablet is closed on entry: press a dock button (default Anamnesis) and wait for it. */
+export async function openTablet(page: Page, tab = 'Anamnesis') {
+  await page.getByTestId('hud-dock').getByRole('button', { name: tab }).click()
+  await expect(page.getByRole('dialog', { name: 'Tablet dokter' })).toBeVisible()
+  // Let the grow-in finish: axe reads colours mid-fade otherwise.
+  await expect(page.getByRole('dialog', { name: 'Tablet dokter' })).toHaveCSS('opacity', '1')
+}
+
+/** Close the tablet with Escape and wait until it is gone. */
+export async function closeTablet(page: Page) {
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('dialog', { name: 'Tablet dokter' })).toBeHidden()
 }
 
 export async function startEr(page: Page) {

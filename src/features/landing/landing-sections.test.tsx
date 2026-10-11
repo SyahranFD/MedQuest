@@ -51,7 +51,7 @@ describe('landing page structure', () => {
 
   it('offers the demo CTA and the how-it-works anchor in the hero', async () => {
     await renderLanding()
-    for (const l of screen.getAllByRole('link', { name: 'Coba demo' })) expect(l).toHaveAttribute('href', '/app')
+    for (const l of screen.getAllByRole('link', { name: 'Try now' })) expect(l).toHaveAttribute('href', '/app')
     expect(screen.getByRole('link', { name: /Lihat cara kerja/ }).getAttribute('href')).toContain('#cara-kerja')
   })
 

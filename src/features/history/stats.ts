@@ -22,10 +22,12 @@ export interface HistoryFilters {
   mode: Mode | 'all'
   rating: RatingFilter
   caseId: string
+  /** Case-title search, case and accent insensitive. */
+  query: string
   sort: HistorySort
 }
 
-export const defaultFilters: HistoryFilters = { mode: 'all', rating: 'all', caseId: 'all', sort: 'newest' }
+export const defaultFilters: HistoryFilters = { mode: 'all', rating: 'all', caseId: 'all', query: '', sort: 'newest' }
 
 export const PASSING_BANDS: readonly Band[] = ['pass', 'good', 'excellent']
 
@@ -43,11 +45,15 @@ export function toRows(records: readonly SessionRecord[]): HistoryRow[] {
   )
 }
 
+const fold = (s: string) => s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase()
+
 export function filterRows(rows: readonly HistoryRow[], f: HistoryFilters): HistoryRow[] {
+  const q = fold(f.query.trim())
   const kept = rows.filter(
     (r) =>
       (f.mode === 'all' || r.mode === f.mode) &&
       (f.caseId === 'all' || r.evaluation.caseId === f.caseId) &&
+      (q === '' || fold(r.evaluation.caseTitle).includes(q)) &&
       (f.rating === 'all' || PASSING_BANDS.includes(r.evaluation.band) === (f.rating === 'passed')),
   )
   const by = {

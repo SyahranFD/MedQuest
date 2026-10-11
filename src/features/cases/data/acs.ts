@@ -319,7 +319,7 @@ export const acsCase: Case = {
       crit('pn-01', 'penalaran', 3, 'EKG segera', P.ordered(['ekg']), {
         met: 'EKG 12 sadapan dipesan.',
         missed: 'EKG 12 sadapan tidak dipesan.',
-      }, { ref: 'perki-aks', improve: 'EKG 12 sadapan harus dilakukan segera pada nyeri dada akut.', highlight: 'EKG dipesan dini sehingga infark terdeteksi cepat.' }),
+      }, { ref: 'perki-aks', improve: 'EKG 12 sadapan harus dilakukan segera pada nyeri dada akut.', highlight: 'EKG dipesan dini, jadi infark terdeteksi cepat.' }),
       crit('pn-02', 'penalaran', 2, 'Biomarker jantung', P.ordered(['troponin', 'ck-mb']), {
         met: 'Biomarker jantung dipesan.',
         missed: 'Biomarker jantung tidak dipesan.',

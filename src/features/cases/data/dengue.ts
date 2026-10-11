@@ -180,7 +180,7 @@ export const dengueCase: Case = {
   rubric: buildRubric({
     criteria: [
       crit('an-01', 'anamnesis', 2, 'Perjalanan demam dan fase penyakit', P.asked(['onset', 'pola-demam'], 2), {
-        met: 'Lama demam dan pola demam ditanyakan sehingga fase kritis dikenali.',
+        met: 'Lama demam dan pola demam ditanyakan, jadi fase kritis dikenali.',
         partial: 'Hanya sebagian perjalanan demam ditanyakan.',
         missed: 'Perjalanan demam tidak digali.',
       }, { partial: P.asked(['onset', 'pola-demam'], 1), improve: 'Tanyakan hari sakit dan apakah demam sudah turun: fase kritis dimulai saat demam turun.' }),
@@ -242,7 +242,7 @@ export const dengueCase: Case = {
       }, { partial: P.treated(['akses-iv', 'monitor'], undefined, 1), improve: 'Pasang akses IV dan monitor tanda vital kontinu.' }),
       crit('tr-03', 'terapi', 2, 'Disposisi perawatan intensif', P.dispo, {
         met: 'Pasien dirawat di ICU.',
-        partial: 'Dirawat di ruang monitor ketat (HCU), cukup acceptable.',
+        partial: 'Dirawat di ruang monitor ketat (HCU). Pilihan ini masih bisa diterima.',
         missed: 'Disposisi tidak sesuai dengan syok.',
       }, { partial: { kind: 'disposition', equals: 'acceptable' }, ref: 'kemenkes-pnpk-dengue', improve: 'Syok dengue memerlukan perawatan intensif atau monitor ketat.' }),
       crit('tr-04', 'terapi', 1, 'Terapi simtomatik aman', P.treated(['parasetamol']), {

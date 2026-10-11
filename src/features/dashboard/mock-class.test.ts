@@ -37,7 +37,7 @@ describe('mock class', () => {
     expect(new Set(attempts.map((a) => a.week)).size).toBe(WEEK_COUNT)
   })
 
-  it('covers all six cases and every percent is the grader weighted score', () => {
+  it('covers every case and every percent is the grader weighted score', () => {
     expect(new Set(attempts.map((a) => a.caseId))).toEqual(new Set(ALL_CASES.map((c) => c.id)))
     for (const a of attempts.slice(0, 60)) {
       const kase = ALL_CASES.find((c) => c.id === a.caseId)!
@@ -83,7 +83,7 @@ describe('mock class', () => {
   it('case stats, kpis and weekly trend agree with the raw attempts', () => {
     const stats = caseStats(students)
     expect(stats.reduce((s, c) => s + c.attempts, 0)).toBe(attempts.length)
-    expect(stats.map((c) => c.hardestRank).sort()).toEqual([1, 2, 3, 4, 5, 6])
+    expect(stats.map((c) => c.hardestRank).sort((a, b) => a - b)).toEqual(ALL_CASES.map((_, i) => i + 1))
     const hardest = stats.find((c) => c.hardestRank === 1)!
     expect(hardest.averagePercent).toBe(Math.min(...stats.map((c) => c.averagePercent)))
     const kpis = classKpis(students)

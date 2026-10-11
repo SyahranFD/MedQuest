@@ -18,7 +18,7 @@ export function SelectTrigger({
       data-slot="select-trigger"
       className={cn(
         fieldClass,
-        'flex h-11 items-center justify-between gap-2 text-left data-[placeholder]:text-ink-muted',
+        'flex h-10 pointer-coarse:h-11 items-center justify-between gap-2 text-left data-[placeholder]:text-ink-muted',
         className,
       )}
       {...props}
@@ -44,7 +44,7 @@ export function SelectContent({
         position={position}
         sideOffset={4}
         className={cn(
-          'mq-pop mq-pop-origin relative z-50 max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-sm border border-line-strong bg-surface p-1',
+          'mq-pop mq-pop-origin relative z-50 max-h-72 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card border border-line bg-raised p-1',
           className,
         )}
         {...props}
@@ -64,15 +64,15 @@ export function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'relative flex min-h-9 cursor-default items-center rounded-xs py-1.5 pr-8 pl-2.5 text-body-s text-ink-1 outline-none select-none pointer-coarse:min-h-11',
-        'data-[highlighted]:bg-panel data-[disabled]:text-ink-4',
+        'relative flex min-h-8 cursor-default items-center rounded-row py-1.5 pr-8 pl-2.5 text-body-s text-ink-1 outline-none select-none pointer-coarse:min-h-11',
+        'data-[highlighted]:bg-hover data-[disabled]:text-ink-4',
         className,
       )}
       {...props}
     >
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator className="absolute right-2.5">
-        <Check className="size-4 text-primary-hover" strokeWidth={2.25} />
+        <Check className="size-4 text-ink-1" strokeWidth={2.25} />
       </SelectPrimitive.ItemIndicator>
     </SelectPrimitive.Item>
   )

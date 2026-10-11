@@ -25,7 +25,7 @@ export function Breadcrumbs() {
   if (crumbs.length === 0) return null
   return (
     <nav aria-label={t('nav.breadcrumb')} data-slot="breadcrumbs" className="min-w-0">
-      <ol className="flex items-center gap-1 text-body-s text-ink-muted">
+      <ol className="flex items-center gap-1 text-body-s text-ink-2">
         {crumbs.map((c, i) => {
           const last = i === crumbs.length - 1
           return (

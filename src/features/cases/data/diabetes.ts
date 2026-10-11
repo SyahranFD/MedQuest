@@ -185,7 +185,7 @@ export const diabetesCase: Case = {
       }, { ref: 'ada-standards', improve: 'Pertimbangkan statin pada diabetes usia 40 tahun ke atas.' }),
       crit('tr-04', 'terapi', 2, 'Rawat jalan dengan kontrol', P.dispo, {
         met: 'Pasien pulang dengan kontrol.',
-        partial: 'Dirujuk lanjut, cukup acceptable.',
+        partial: 'Dirujuk lanjut. Pilihan ini masih bisa diterima.',
         missed: 'Disposisi tidak sesuai.',
       }, { partial: { kind: 'disposition', equals: 'acceptable' }, improve: 'Tanpa tanda bahaya akut, rawat jalan dengan kontrol 4 minggu dan rujuk mata.' }),
       crit('ks-01', 'keselamatan', 3, 'Tidak duplikasi sulfonilurea atau steroid', P.not(P.treated('contraindicated')), {

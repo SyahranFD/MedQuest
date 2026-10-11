@@ -3,8 +3,8 @@ import type { LucideIcon } from 'lucide-react'
 import type { CoreKey, MessageKey } from '@/lib/i18n'
 
 // Nav icon weight and size live here so every shell draws them the same way (CLAUDE.md section 8).
-export const NAV_ICON_STROKE = 1.75
-export const NAV_ICON_SIZE = 20
+export const NAV_ICON_STROKE = 1.5
+export const NAV_ICON_SIZE = 22
 
 export interface NavItem {
   /** i18n key of the label (a content noun, not "Home"). */

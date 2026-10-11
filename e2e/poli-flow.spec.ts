@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { seed, watch } from './helpers'
+import { closeTablet, openTablet, seed, watch } from './helpers'
 
 test('poli case full flow to debrief', async ({ page }) => {
   await seed(page)
@@ -7,14 +7,15 @@ test('poli case full flow to debrief', async ({ page }) => {
 
   // library to brief
   await page.goto('/app/kasus')
-  await page.getByRole('button', { name: 'Poliklinik', exact: true }).click()
+  await page.getByRole('tab', { name: 'Poliklinik', exact: true }).click()
   await page.getByRole('link', { name: /Batuk lebih dari tiga minggu/ }).click()
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible()
-  await expect(page.getByText('Keluhan utama').first()).toBeVisible()
+  await expect(page.getByText('Tanda vital awal').first()).toBeVisible()
   await page.getByRole('button', { name: 'Mulai konsultasi' }).click()
   await expect(page).toHaveURL(/\/app\/sesi\//)
 
-  // anamnesis: three questions
+  // anamnesis: three questions (the tablet opens from the dock)
+  await openTablet(page)
   const panel = page.getByTestId('anamnesis-panel')
   await expect(panel).toBeVisible()
   const questions = panel.locator('section ul button:not([disabled])')
@@ -23,7 +24,7 @@ test('poli case full flow to debrief', async ({ page }) => {
 
   // an empathic message raises trust (wait until the patient stops talking, interrupting costs trust)
   await expect(page.locator('[data-talking="true"]')).toHaveCount(0)
-  const meter = page.getByRole('meter', { name: 'Kepercayaan pasien' }).first()
+  const meter = page.getByRole('meter', { name: 'Kepercayaan pasien', includeHidden: true }).first()
   const before = Number(await meter.getAttribute('aria-valuenow'))
   await page.getByRole('textbox', { name: 'Ketik ucapan untuk pasien' }).fill('Saya mengerti ini pasti tidak nyaman bagi Anda. Silakan ceritakan dengan tenang.')
   await page.getByRole('button', { name: 'Kirim' }).click()
@@ -44,20 +45,20 @@ test('poli case full flow to debrief', async ({ page }) => {
 
   // diagnosis
   await page.getByRole('tab', { name: 'Diagnosis' }).click()
-  await expect(page.getByText('Alat latihan, bukan alat keputusan klinis').first()).toBeVisible()
   await page.getByRole('radio').first().click()
   await page.getByRole('button', { name: 'Tetapkan diagnosis' }).click()
-  await expect(page.getByText('Terapi kini terbuka')).toBeVisible()
+  await expect(page.getByText('Tab Terapi sudah terbuka')).toBeVisible()
 
   // treatment and disposition
   await page.getByRole('tab', { name: 'Terapi' }).click()
   await page.getByRole('tabpanel').locator('section ul button').first().click()
-  await page.getByRole('button', { name: 'Resepkan' }).click()
+  await page.getByRole('button', { name: /Tanda tangani resep/ }).click()
   await page.getByRole('radio').first().click()
   await page.getByRole('button', { name: 'Tetapkan disposisi' }).click()
-  await expect(page.getByText(/sudah selesai ditangani/).first()).toBeVisible()
+  await expect(page.getByTestId('patient-resolved')).toBeVisible()
 
   // end dialog and debrief
+  await closeTablet(page)
   await page.getByTestId('end-session').click()
   const dialog = page.getByRole('dialog')
   await expect(dialog.getByRole('heading', { name: 'Akhiri sesi?' })).toBeVisible()
@@ -69,6 +70,7 @@ test('poli case full flow to debrief', async ({ page }) => {
   await expect(page.getByTestId('debrief-percent')).toBeVisible()
   await expect(page.getByTestId('debrief-band')).toBeVisible()
   await expect(page.getByTestId('cite-chip').first()).toBeVisible()
+  await page.getByText('Garis waktu keputusan').first().click()
   await expect(page.getByTestId('timeline')).toBeVisible()
   w.expectClean()
 })

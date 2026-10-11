@@ -10,34 +10,29 @@ export function MissedPanel() {
   return (
     <Panel title={dt('missed.title')} description={dt('missed.desc')}>
       {isPending && (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
           {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
       )}
       {isError && <PanelError onRetry={() => void refetch()} />}
       {data && (
-        <ol className="flex flex-col divide-y divide-line">
+        <ol className="-mx-2 flex flex-col">
           {data.map((m, i) => (
-            <li key={`${m.caseId}-${m.criterionId}`} className="grid grid-cols-[2rem_1fr] gap-x-3 gap-y-2 py-3.5 first:pt-0 last:pb-0 sm:grid-cols-[2rem_1fr_auto] sm:items-center">
-              <span className="font-display text-heading-card font-semibold text-ink-4 tabular-nums" aria-hidden="true">
+            <li key={`${m.caseId}-${m.criterionId}`} className="grid min-h-14 grid-cols-[1.5rem_1fr_auto] items-center gap-x-3 rounded-row px-2 py-2 hover:bg-hover">
+              <span className="text-body-s text-ink-3 tabular-nums" aria-hidden="true">
                 {i + 1}
               </span>
-              <div className="flex min-w-0 flex-col gap-1.5">
-                <p className="text-body font-medium text-ink-1">{m.label}</p>
-                <p className="text-body-s text-ink-2">
-                  {m.caseTitle}
-                  <span className="text-ink-muted">, {dimension(m.dimension)}</span>
-                </p>
-                {m.cite && (
-                  <div>
-                    <CiteChip cite={m.cite} />
-                  </div>
-                )}
+              <div className="flex min-w-0 flex-col gap-1">
+                <p className="text-body-s font-medium text-ink-1">{m.label}</p>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-ink-3">
+                  {m.caseTitle}, {dimension(m.dimension)}
+                  {m.cite && <CiteChip cite={m.cite} />}
+                </div>
               </div>
-              <p className="col-start-2 text-body-s text-ink-2 sm:col-start-3 sm:text-right">
-                <span className="block font-display text-heading-card font-semibold text-ink-1 tabular-nums">{dt('missed.rate', { n: m.missRate })}</span>
+              <p className="text-right text-meta text-ink-3">
+                <span className="block text-body-s font-medium text-ink-1 tabular-nums">{dt('missed.rate', { n: m.missRate })}</span>
                 {dt('missed.attempts', { n: m.attempts })}
               </p>
             </li>

@@ -21,10 +21,10 @@ export function recommendCase(summary: StudentSummary, attempts: readonly ClassA
   const tried = new Set(attempts.map((a) => a.caseId))
   const fresh = ALL_CASES.find((c) => !tried.has(c.id))
   if (fresh) return { caseId: fresh.id, dimension, gap, score }
-  const perCase = ALL_CASES.map((c) => {
+  const perCase = ALL_CASES.flatMap((c) => {
     const list = attempts.filter((a) => a.caseId === c.id)
-    const avg = list.reduce((s, a) => s + a.evaluation.dimensions[dimension].percent, 0) / list.length
-    return { id: c.id, avg }
+    if (!list.length) return []
+    return [{ id: c.id, avg: list.reduce((s, a) => s + a.evaluation.dimensions[dimension].percent, 0) / list.length }]
   })
   const worst = perCase.reduce((w, c) => (c.avg < w.avg ? c : w))
   return { caseId: worst.id, dimension, gap, score }

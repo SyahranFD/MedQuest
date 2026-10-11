@@ -31,15 +31,16 @@ export function TooltipContent({
   className,
   sideOffset = 6,
   children,
+  container,
   ...props
-}: ComponentProps<typeof TooltipPrimitive.Content>) {
+}: ComponentProps<typeof TooltipPrimitive.Content> & { container?: HTMLElement | null }) {
   return (
-    <TooltipPrimitive.Portal>
+    <TooltipPrimitive.Portal container={container ?? undefined}>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          'mq-pop mq-pop-origin z-50 max-w-xs rounded-xs bg-ink-1 px-2.5 py-1.5 text-label font-medium text-surface',
+          'mq-pop mq-pop-origin z-50 max-w-xs rounded-row bg-ink-1 px-2 py-1 text-chip font-medium text-surface',
           className,
         )}
         {...props}
