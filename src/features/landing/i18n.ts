@@ -10,7 +10,7 @@ const id = {
   'hero.title': 'Latihan koas bersama pasien simulasi.',
   'hero.sub':
     'Anamnesis, pemeriksaan, dan terapi dalam Bahasa Indonesia, dengan umpan balik berbasis guideline lokal.',
-  'hero.cta': 'Coba demo',
+  'hero.cta': 'Try now',
   'hero.how': 'Lihat cara kerja',
   'hero.trust': 'Demo memakai kasus sintetis. Tidak ada data pasien sungguhan.',
 
@@ -79,7 +79,7 @@ const id = {
   'rail.f5.title': 'Dashboard dosen',
   'rail.f5.body': 'Pantau progres kelas, skor per kompetensi, dan kasus yang paling sering salah.',
   'rail.f6.title': 'Kasus penyakit tropis',
-  'rail.f6.body': 'DBD, malaria, dan TBC termasuk di antara enam kasus pada demo ini.',
+  'rail.f6.body': 'DBD, malaria, dan TBC termasuk di antara kasus pada demo ini.',
 
   'rail.a.bed': 'Bed',
   'rail.a.critical': 'Kritis',
@@ -160,7 +160,7 @@ const en: Record<keyof typeof id, string> = {
   'hero.title': 'Clerkship practice with simulated patients.',
   'hero.sub':
     'History taking, examination, and treatment in Indonesian, with feedback grounded in local guidelines.',
-  'hero.cta': 'Try the demo',
+  'hero.cta': 'Try now',
   'hero.how': 'See how it works',
   'hero.trust': 'The demo uses synthetic cases. No real patient data.',
 
@@ -229,7 +229,7 @@ const en: Record<keyof typeof id, string> = {
   'rail.f5.title': 'Lecturer dashboard',
   'rail.f5.body': 'Follow class progress, scores per competency, and the cases most often missed.',
   'rail.f6.title': 'Tropical disease cases',
-  'rail.f6.body': 'Dengue, malaria, and TB are among the six cases in this demo.',
+  'rail.f6.body': 'Dengue, malaria, and TB are among the cases in this demo.',
 
   'rail.a.bed': 'Bed',
   'rail.a.critical': 'Critical',

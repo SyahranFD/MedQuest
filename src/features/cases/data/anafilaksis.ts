@@ -1,0 +1,252 @@
+// Kasus 9 (IGD): syok anafilaksis setelah makan udang. SINTETIS.
+// Konsultan medis harus memvalidasi dosis epinefrin, waktu observasi, dan alur sebelum dipakai di luar simulasi.
+
+import { buildRubric, crit, defaultFallbacks, exam, iceEntries, makeTests, P, pickDispositions, pickTreatments, q, safetyNetCriterion, vitals } from '../builders'
+import type { Case } from '../types'
+
+const MODE = 'er' as const
+
+export const anafilaksisCase: Case = {
+  id: 'er-anafilaksis',
+  mode: MODE,
+  specialty: 'Penyakit Dalam / Paru dan Alergi / IGD',
+  difficulty: 'mudah',
+  synthetic: true,
+  severity: 'critical',
+  title: 'Syok anafilaksis setelah makan udang',
+  patient: { name: 'Nurul Aini', age: 25, gender: 'F', occupation: 'Guru honorer' },
+  arrivalBlurb: 'Perempuan 25 tahun, 20 menit setelah makan nasi goreng udang tiba-tiba gatal seluruh badan, bibir bengkak, sesak, dan pusing.',
+  chiefComplaint: 'Badan saya gatal semua, Dok, bibir bengkak, dan napas saya sesak. Kepala pusing sekali.',
+  vitals: vitals(128, '78/40', 28, 91, 36.8, 15),
+  initialTrust: 58,
+  greeting: 'Dok, tolong... napas saya sesak...',
+  farewell: 'Terima kasih, Dok.',
+  fallbacks: defaultFallbacks({
+    unclear: [
+      'Maaf Dok, suara saya serak, bisa diulang?',
+      'Apa tadi Dok? Saya pusing sekali.',
+      'Maksudnya bagaimana, Dok?',
+    ],
+    empathyReply: 'Iya, Dok... saya takut sekali tidak bisa napas. Terima kasih.',
+  }),
+  dialogue: [
+    q('keluhan-utama', 'rps', 'Keluhan utama Ibu apa?', 'Gatal seluruh badan, bibir bengkak, dan sesak napas, Dok. Pusing juga.', ['keluhan utama', 'apa keluhan', 'keluhan apa', 'ada keluhan', 'cerita keluhan', 'mengapa datang']),
+    q('onset', 'rps', 'Keluhan ini mulai berapa lama setelah makan?', 'Kira-kira lima belas sampai dua puluh menit setelah makan, Dok. Awalnya bibir gatal dulu.', ['berapa lama setelah makan', 'sejak kapan', 'kapan mulai', 'setelah makan', 'berapa menit']),
+    q('pemicu-makanan', 'rps', 'Tadi Ibu makan apa saja?', 'Nasi goreng seafood di warung, Dok, ada udang dan cumi. Saya makan banyak udangnya.', ['makan apa', 'makanan tadi', 'makan apa saja', 'pemicu', 'makanan', 'udang']),
+    q('gatal-biduran', 'rps', 'Apakah muncul bentol-bentol merah dan gatal di kulit?', 'Iya, Dok, bentol merah di perut, dada, sampai punggung. Gatalnya tidak tertahankan.', ['bentol', 'biduran', 'gatal', 'ruam', 'kulit merah']),
+    q('bengkak-bibir', 'rps', 'Apakah bibir, lidah, atau kelopak mata membengkak?', 'Bibir dan kelopak mata bengkak, Dok. Lidah juga terasa tebal.', ['bibir bengkak', 'lidah bengkak', 'kelopak bengkak', 'bengkak', 'angioedema'], { red: true }),
+    q('sesak-suara', 'rps', 'Apakah sesak napas, mengi, atau suara jadi serak dan tenggorokan terasa menutup?', 'Iya, Dok. Napas berbunyi ngik-ngik, suara serak, dan tenggorokan seperti menyempit.', ['sesak', 'mengi', 'suara serak', 'tenggorokan menyempit', 'tenggorokan menutup', 'ngik ngik'], { red: true }),
+    q('pusing-pingsan', 'rps', 'Apakah pusing, berkunang-kunang, atau hampir pingsan?', 'Pusing sekali, Dok, hampir jatuh tadi waktu berdiri.', ['pusing', 'berkunang', 'pingsan', 'hampir jatuh', 'lemas'], { red: true }),
+    q('pencernaan', 'rps', 'Apakah ada mual, muntah, nyeri perut, atau diare?', 'Mual dan perut melilit, Dok. Muntah sekali tadi di jalan.', ['mual', 'muntah', 'nyeri perut', 'diare', 'perut melilit']),
+    q('alergi-udang', 'alergi', 'Apakah Ibu punya riwayat alergi makanan atau obat, terutama udang?', 'Pernah gatal-gatal setelah makan udang waktu kuliah, Dok. Tapi tidak sampai sesak, jadi saya anggap biasa.', ['alergi makanan', 'alergi udang', 'alergi', 'riwayat alergi', 'alergi obat']),
+    q('riwayat-anafilaksis', 'rpd', 'Apakah Ibu pernah mengalami reaksi alergi berat sebelumnya, misalnya sampai sesak atau pingsan?', 'Belum pernah, Dok. Ini yang pertama.', ['alergi berat', 'reaksi berat', 'pernah sesak alergi', 'pernah pingsan alergi', 'anafilaksis']),
+    q('asma', 'rpd', 'Apakah Ibu punya asma atau penyakit paru?', 'Asma ringan dari kecil, Dok. Jarang kambuh.', ['asma', 'penyakit paru', 'mengi', 'riwayat asma']),
+    q('rpd-umum', 'rpd', 'Apakah ada penyakit jantung atau penyakit kronik lain?', 'Tidak ada, Dok.', ['penyakit jantung', 'penyakit kronik', 'penyakit lain', 'riwayat penyakit', 'penyakit dahulu']),
+    q('obat-hari-ini', 'obat', 'Apakah Ibu minum obat sebelum atau sesudah makan tadi, misalnya obat nyeri?', 'Sebelum makan saya minum asam mefenamat karena nyeri haid, Dok. Tidak minum obat lain.', ['obat nyeri', 'obat sebelum makan', 'obat hari ini', 'asam mefenamat', 'minum obat sebelum'], { gate: [55, 'Tidak ada, Dok.'] }),
+    q('obat-rutin', 'obat', 'Apakah ada obat yang rutin Ibu minum, misalnya inhaler atau pil KB?', 'Hanya inhaler asma kalau perlu, Dok.', ['obat rutin', 'obat sehari', 'inhaler', 'pil kb', 'obat tetap']),
+    q('teman-makan', 'sosial', 'Apakah orang yang makan bersama Ibu juga bergejala?', 'Tidak, Dok. Teman saya makan menu yang sama tapi tidak udang, dia baik-baik saja.', ['makan bersama', 'teman makan', 'orang lain sakit', 'teman sakit']),
+    q('aktivitas', 'sosial', 'Apakah Ibu berolahraga atau banyak bergerak setelah makan?', 'Habis makan saya jalan cepat ke sekolah, Dok.', ['olahraga', 'bergerak setelah makan', 'jalan cepat', 'aktivitas']),
+    q('gigitan', 'rps', 'Apakah ada gigitan atau sengatan serangga hari ini?', 'Tidak ada, Dok.', ['gigitan serangga', 'sengatan', 'digigit', 'lebah']),
+    q('haid', 'sosial', 'Kapan haid terakhir Ibu, dan apakah mungkin hamil?', 'Sedang haid hari ketiga, Dok. Tidak hamil.', ['haid', 'menstruasi', 'hamil', 'hpht', 'kehamilan'], { gate: [55, 'Kenapa ditanya itu, Dok? Nanti saja.'] }),
+    q('keluarga', 'keluarga', 'Apakah ada keluarga yang punya alergi berat atau asma?', 'Ibu saya alergi dingin dan adik asma, Dok.', ['riwayat keluarga', 'keluarga alergi', 'keluarga asma', 'keluarga sakit', 'keluarga']),
+    q('pekerjaan', 'sosial', 'Ibu bekerja apa dan tinggal dengan siapa?', 'Guru honorer, Dok. Tinggal dengan orang tua. Teman kerja yang bawa saya kemari.', ['pekerjaan', 'bekerja', 'kerja', 'tinggal dengan siapa', 'tinggal']),
+    ...iceEntries(
+      'Saya kira alergi biasa seperti dulu, Dok, tapi kali ini sampai sesak.',
+      'Saya takut tenggorokan saya menutup, Dok, dan tidak bisa napas.',
+      'Saya mau cepat ditolong, Dok, supaya napas saya lega.',
+    ),
+    q('demam', 'rps', 'Apakah ada demam atau batuk pilek beberapa hari terakhir?', 'Tidak ada, Dok.', ['demam', 'batuk', 'pilek'], { distractor: true }),
+    q('alkohol', 'sosial', 'Apakah Ibu minum alkohol atau merokok?', 'Tidak, Dok.', ['alkohol', 'merokok', 'rokok'], { distractor: true }),
+  ],
+  exam: [
+    exam('umum', 'umum', 'Keadaan umum dan kesadaran', 'Gelisah, cemas, sadar penuh, napas cepat, suara serak.', { abnormal: true }),
+    exam('kulit', 'kulit', 'Kulit', 'Urtikaria generalisata dengan eritema pada dada, perut, dan punggung.', { abnormal: true }),
+    exam('kepala-leher', 'kepala-leher', 'Bibir, lidah, dan jalan napas', 'Angioedema bibir dan kelopak mata, lidah membengkak, uvula edema, stridor inspirasi ringan.', { abnormal: true }),
+    exam('paru', 'paru', 'Paru', 'Mengi ekspirasi bilateral, retraksi interkostal ringan.', { abnormal: true }),
+    exam('sirkulasi', 'ekstremitas', 'Nadi, akral, dan CRT', 'Nadi 128x/menit lemah, akral dingin dan lembab, CRT 3 detik.', { abnormal: true }),
+    exam('jantung', 'jantung', 'Jantung', 'Takikardia reguler, tidak ada murmur.', { abnormal: true }),
+    exam('abdomen', 'abdomen', 'Abdomen', 'Bising usus meningkat, nyeri tekan difus ringan.', { abnormal: true }),
+    exam('neuro', 'neurologi', 'Neurologi', 'Sadar penuh, tidak ada defisit fokal.', { distractor: true }),
+  ],
+  tests: makeTests(MODE, [
+    ['ekg', [{ text: 'EKG: sinus takikardia 126x/menit, tidak ada kelainan ST-T.', abnormal: true }]],
+    ['gds', [{ text: 'Glukosa darah sewaktu 112 mg/dL.', abnormal: false }]],
+    ['dpl', [{ text: 'Hb 13,4 g/dL, hematokrit 44% (hemokonsentrasi ringan), leukosit 11.600/uL, eosinofil 6%, trombosit 290.000/uL.', abnormal: true }]],
+    [
+      'laktat',
+      [
+        { text: 'Laktat 4,2 mmol/L (syok).', abnormal: true, critical: true, minStage: 2 },
+        { text: 'Laktat 2,8 mmol/L (meningkat).', abnormal: true },
+      ],
+    ],
+    ['agd', [{ text: 'pH 7,33, pCO2 32, pO2 66, HCO3 17 (asidosis metabolik ringan dengan hipoksemia).', abnormal: true }]],
+    ['elektrolit', [{ text: 'Na 138, K 3,8, Cl 104 mmol/L (normal).', abnormal: false }]],
+    ['troponin', [{ text: 'Troponin I 0,02 ng/mL (normal).', abnormal: false }]],
+    'foto-toraks',
+    'ureum-kreatinin',
+    'koagulasi',
+    'igm-igg-dengue',
+    'ct-kepala',
+  ]),
+  panels: [
+    { id: 'panel-anafilaksis', label: 'Panel anafilaksis', testIds: ['ekg', 'gds', 'dpl', 'laktat', 'agd'] },
+  ],
+  diagnoses: [
+    { id: 'anafilaksis', label: 'Syok anafilaksis akibat makanan (udang)' },
+    { id: 'urtikaria-akut', label: 'Urtikaria akut tanpa anafilaksis' },
+    { id: 'asma-akut', label: 'Serangan asma akut' },
+    { id: 'syok-septik', label: 'Syok septik' },
+    { id: 'serangan-panik', label: 'Serangan panik' },
+  ],
+  correctDiagnosisId: 'anafilaksis',
+  differentialIds: ['urtikaria-akut', 'asma-akut', 'syok-septik', 'serangan-panik'],
+  treatments: pickTreatments([
+    'epinefrin-im',
+    'posisi-syok',
+    'akses-iv',
+    'kristaloid-bolus',
+    'oksigen',
+    'monitor',
+    'difenhidramin-iv',
+    'deksametason',
+    'epinefrin-iv-bolus',
+    'ketorolak',
+    'parasetamol',
+  ]),
+  indicatedTreatmentIds: ['epinefrin-im', 'posisi-syok', 'akses-iv', 'kristaloid-bolus', 'oksigen', 'monitor', 'difenhidramin-iv', 'deksametason'],
+  criticalTreatmentIds: ['epinefrin-im'],
+  contraindicated: [
+    { id: 'epinefrin-iv-bolus', reason: 'Epinefrin IV bolus tanpa pengenceran dan tanpa monitor menimbulkan aritmia dan hipertensi berat; jalur utama adalah intramuskular.' },
+    { id: 'ketorolak', reason: 'OAINS dapat memicu dan memperberat reaksi alergi.' },
+  ],
+  dispositions: pickDispositions(['pulang', 'pulang-kontrol', 'observasi-igd', 'rawat-bangsal', 'rawat-hcu']),
+  correctDispositionId: 'observasi-igd',
+  acceptableDispositionIds: ['rawat-hcu', 'rawat-bangsal'],
+  er: {
+    arrivalSec: 300,
+    triage: {
+      esi: 1,
+      zone: 'red',
+      reason: 'Angioedema, mengi, tekanan sistolik 78 mmHg, dan SpO2 91% setelah makan udang: anafilaksis dengan ancaman jalan napas dan syok.',
+    },
+    timeline: [
+      {
+        stage: 1,
+        atSec: 90,
+        vitalsDelta: { hr: 10, sbp: -10, dbp: -8, rr: 4, spo2: -3 },
+        line: 'Bengkak bibir dan lidah bertambah, suara makin serak.',
+        averted: ['epinefrin-im'],
+      },
+      {
+        stage: 2,
+        atSec: 200,
+        vitalsDelta: { hr: 14, sbp: -16, dbp: -12, rr: 6, spo2: -6, gcs: -2 },
+        line: 'Syok anafilaksis: tekanan darah sangat rendah dan terdengar stridor.',
+        averted: ['epinefrin-im'],
+      },
+      {
+        stage: 3,
+        atSec: 330,
+        vitalsDelta: { hr: -80, sbp: -45, dbp: -30, spo2: -30, gcs: -8 },
+        line: 'Pasien henti napas dan henti jantung (obstruksi jalan napas).',
+        averted: ['epinefrin-im'],
+      },
+    ],
+    effects: [
+      { treatmentId: 'epinefrin-im', improves: true, vitalsDelta: { hr: -14, sbp: 22, dbp: 14, rr: -5, spo2: 5 } },
+      { treatmentId: 'kristaloid-bolus', vitalsDelta: { sbp: 10, dbp: 6, hr: -6 } },
+      { treatmentId: 'posisi-syok', vitalsDelta: { sbp: 4 } },
+      { treatmentId: 'oksigen', vitalsDelta: { spo2: 3 } },
+      { treatmentId: 'epinefrin-iv-bolus', harmful: true, vitalsDelta: { hr: 30, sbp: 30 } },
+      { treatmentId: 'ketorolak', harmful: true },
+    ],
+    criticalDeadlineSec: 180,
+  },
+  guidelineIds: ['wao-anaphylaxis-2020'],
+  rubric: buildRubric({
+    criteria: [
+      crit('an-01', 'anamnesis', 2, 'Pemicu dan jeda waktu', P.asked(['onset', 'pemicu-makanan'], 2), {
+        met: 'Jeda waktu dan makanan pemicu ditanyakan.',
+        partial: 'Hanya salah satunya ditanyakan.',
+        missed: 'Pemicu dan jeda waktu tidak digali.',
+      }, { partial: P.asked(['onset', 'pemicu-makanan'], 1), ref: 'wao-anaphylaxis-2020', improve: 'Tanyakan apa yang dimakan dan berapa menit sebelum gejala muncul.' }),
+      crit('an-02', 'anamnesis', 2, 'Gejala multisistem', P.asked(['gatal-biduran', 'bengkak-bibir', 'sesak-suara', 'pusing-pingsan'], 3), {
+        met: 'Gejala kulit, napas, dan sirkulasi ditanyakan.',
+        partial: 'Sebagian gejala multisistem ditanyakan.',
+        missed: 'Gejala multisistem tidak digali.',
+      }, { partial: P.asked(['gatal-biduran', 'bengkak-bibir', 'sesak-suara', 'pusing-pingsan'], 2), improve: 'Anafilaksis melibatkan kulit, napas, dan sirkulasi sekaligus.' }),
+      crit('an-03', 'anamnesis', 1, 'Riwayat alergi dan asma', P.asked(['alergi-udang', 'asma'], 1), {
+        met: 'Riwayat alergi atau asma ditanyakan.',
+        missed: 'Riwayat alergi dan asma tidak ditanyakan.',
+      }, { improve: 'Asma meningkatkan risiko reaksi berat; tanyakan juga alergi sebelumnya.' }),
+      crit('pe-01', 'pemeriksaan', 3, 'Menilai jalan napas dan sirkulasi', P.examined(['kepala-leher', 'paru', 'sirkulasi'], 2), {
+        met: 'Jalan napas, paru, dan sirkulasi dinilai.',
+        partial: 'Hanya sebagian yang dinilai.',
+        missed: 'Jalan napas dan sirkulasi tidak dinilai.',
+      }, { partial: P.examined(['kepala-leher', 'paru', 'sirkulasi'], 1), improve: 'Nilai jalan napas, mengi, dan perfusi lebih dulu.' }),
+      crit('pe-02', 'pemeriksaan', 1, 'Kulit', P.examined(['kulit']), {
+        met: 'Kulit diperiksa dan urtikaria terlihat.',
+        missed: 'Kulit tidak diperiksa.',
+      }, { improve: 'Cari urtikaria dan angioedema.' }),
+      crit('pn-01', 'penalaran', 3, 'Diagnosis anafilaksis', P.dx, {
+        met: 'Diagnosis anafilaksis benar.',
+        missed: 'Diagnosis tidak sesuai dengan reaksi alergi akut multisistem.',
+      }, { ref: 'wao-anaphylaxis-2020', improve: 'Gejala kulit ditambah gangguan napas atau sirkulasi setelah pemicu adalah anafilaksis.' }),
+      crit('pn-02', 'penalaran', 1, 'Pemeriksaan penunjang secukupnya', P.ordered(['ekg', 'gds', 'dpl'], 1), {
+        met: 'Penunjang dasar dipesan tanpa menunda terapi.',
+        missed: 'Tidak ada penunjang dasar.',
+      }, { improve: 'Penunjang boleh dikerjakan setelah epinefrin diberikan; jangan menunda.' }),
+      crit('pn-03', 'penalaran', 1, 'Triase zona merah', { kind: 'triage', equals: 'correct' }, {
+        met: 'Pasien ditempatkan di zona merah.',
+        missed: 'Zona triase tidak sesuai kegawatan.',
+      }, { improve: 'Ancaman jalan napas dengan hipotensi masuk zona merah.' }),
+      crit('tr-01', 'terapi', 3, 'Epinefrin intramuskular', P.treated(['epinefrin-im']), {
+        met: 'Epinefrin IM diberikan.',
+        missed: 'Epinefrin IM tidak diberikan.',
+      }, { ref: 'wao-anaphylaxis-2020', improve: 'Epinefrin IM di paha anterolateral adalah obat pertama dan utama anafilaksis.', highlight: 'Epinefrin diberikan cepat dan lewat jalur yang tepat.' }),
+      crit('tr-02', 'terapi', 2, 'Posisi, cairan, dan oksigen', P.treated(['posisi-syok', 'kristaloid-bolus', 'oksigen'], undefined, 2), {
+        met: 'Posisi, cairan, dan oksigen diberikan.',
+        partial: 'Hanya satu langkah yang diberikan.',
+        missed: 'Penunjang sirkulasi dan napas tidak diberikan.',
+      }, { partial: P.treated(['posisi-syok', 'kristaloid-bolus', 'oksigen'], undefined, 1), ref: 'wao-anaphylaxis-2020', improve: 'Baringkan terlentang dengan tungkai ditinggikan, beri kristaloid dan oksigen.' }),
+      crit('tr-03', 'terapi', 1, 'Akses vena dan monitoring', P.treated(['akses-iv', 'monitor'], undefined, 2), {
+        met: 'Akses IV dan monitoring dipasang.',
+        partial: 'Hanya salah satunya.',
+        missed: 'Akses IV dan monitoring tidak dipasang.',
+      }, { partial: P.treated(['akses-iv', 'monitor'], undefined, 1), improve: 'Pasang akses IV dan monitor kontinu.' }),
+      crit('tr-04', 'terapi', 1, 'Terapi tambahan', P.treated(['difenhidramin-iv', 'deksametason'], undefined, 1), {
+        met: 'Antihistamin atau steroid diberikan sebagai tambahan.',
+        missed: 'Terapi tambahan tidak diberikan.',
+      }, { improve: 'Antihistamin dan steroid hanya tambahan setelah epinefrin, bukan pengganti.' }),
+      crit('tr-05', 'terapi', 2, 'Observasi setelah reaksi', P.dispo, {
+        met: 'Pasien diobservasi di IGD.',
+        partial: 'Dirawat untuk observasi. Pilihan ini masih bisa diterima.',
+        missed: 'Disposisi tidak sesuai: pasien berisiko reaksi bifasik.',
+      }, { partial: { kind: 'disposition', equals: 'acceptable' }, ref: 'wao-anaphylaxis-2020', improve: 'Observasi beberapa jam setelah anafilaksis karena reaksi bifasik bisa muncul.' }),
+      crit('ks-01', 'keselamatan', 3, 'Epinefrin dalam 3 menit sejak masuk bed', P.treated(['epinefrin-im'], 180), {
+        met: 'Epinefrin diberikan dalam batas waktu.',
+        missed: 'Epinefrin terlambat atau tidak diberikan.',
+      }, { ref: 'wao-anaphylaxis-2020', improve: 'Setiap menit tanpa epinefrin menaikkan risiko henti napas dan jantung.' }),
+      crit('ks-02', 'keselamatan', 3, 'Tidak memberi epinefrin IV bolus atau OAINS', P.not(P.treated('contraindicated')), {
+        met: 'Tidak ada obat kontraindikasi.',
+        missed: 'Epinefrin IV bolus atau OAINS diberikan.',
+      }, { ref: 'wao-anaphylaxis-2020', improve: 'Gunakan jalur IM; hindari bolus IV tanpa pengenceran dan OAINS.' }),
+      crit('ks-03', 'keselamatan', 3, 'Pasien selamat', P.survived, {
+        met: 'Pasien selamat sampai disposisi.',
+        missed: 'Pasien meninggal selama penanganan.',
+      }, { improve: 'Epinefrin lebih awal mencegah obstruksi jalan napas dan syok.' }),
+      safetyNetCriterion(1, 'wao-anaphylaxis-2020'),
+    ],
+    breaches: [
+      { id: 'br-kontra', when: P.treated('contraindicated'), what: 'Memberikan epinefrin IV bolus tanpa pengenceran atau OAINS pada anafilaksis.', guidelineRef: 'wao-anaphylaxis-2020' },
+      { id: 'br-pulang', when: { kind: 'disposition', equals: 'pulang' }, what: 'Memulangkan pasien tanpa observasi setelah anafilaksis.', guidelineRef: 'wao-anaphylaxis-2020' },
+      { id: 'br-tanpa-kritis', when: P.not(P.treated('critical')), what: 'Tidak memberikan epinefrin pada anafilaksis.', guidelineRef: 'wao-anaphylaxis-2020' },
+    ],
+    teachingPoints: [
+      'Anafilaksis adalah diagnosis klinis: kulit ditambah napas atau sirkulasi setelah pemicu. Jangan menunggu hasil lab.',
+      'Epinefrin IM di paha anterolateral adalah terapi pertama; antihistamin dan steroid hanya tambahan.',
+      'Pasien dibaringkan terlentang dengan tungkai ditinggikan, dan observasi diperlukan karena reaksi bifasik.',
+      'Edukasi pasien: hindari pemicu, kenali gejala awal, dan bawa epinefrin auto-injektor bila tersedia.',
+    ],
+  }),
+}

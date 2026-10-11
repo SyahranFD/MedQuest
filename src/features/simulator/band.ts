@@ -1,9 +1,9 @@
 import type { Band } from '@/features/cases/types'
 
-export const BAND_VARIANT: Record<Band, 'success' | 'warning' | 'danger' | 'neutral'> = {
+export const BAND_VARIANT: Record<Band, 'success' | 'info' | 'warning' | 'danger'> = {
   excellent: 'success',
   good: 'success',
-  pass: 'neutral',
+  pass: 'info',
   borderline: 'warning',
   'clear-fail': 'danger',
 }

@@ -1,0 +1,281 @@
+// Kasus 7 (IGD): eksaserbasi akut PPOK dengan gagal napas hiperkapnia. SINTETIS.
+// Konsultan medis harus memvalidasi target saturasi, kriteria ventilasi non-invasif, dan dosis sebelum dipakai di luar simulasi.
+
+import { buildRubric, crit, defaultFallbacks, exam, iceEntries, makeTests, P, pickDispositions, pickTreatments, q, safetyNetCriterion, vitals } from '../builders'
+import type { Case } from '../types'
+
+const MODE = 'er' as const
+
+export const ppokCase: Case = {
+  id: 'er-ppok-eksaserbasi',
+  mode: MODE,
+  specialty: 'Penyakit Dalam / Paru / IGD',
+  difficulty: 'sulit',
+  synthetic: true,
+  severity: 'critical',
+  title: 'Eksaserbasi PPOK dengan gagal napas',
+  patient: { name: 'Sugiyono', age: 68, gender: 'M', occupation: 'Petani tembakau' },
+  arrivalBlurb: 'Laki-laki 68 tahun perokok berat, sesak makin berat 3 hari, dahak kental kekuningan, tampak mengantuk dan bibir kebiruan.',
+  chiefComplaint: 'Saya sesak sekali, Dok, napas seperti ditindih. Dahak banyak dan kental.',
+  vitals: vitals(112, '148/88', 30, 82, 37.8, 14),
+  initialTrust: 50,
+  greeting: 'Dok... sesak... tolong...',
+  farewell: 'Terima kasih, Dok.',
+  fallbacks: defaultFallbacks({
+    unclear: [
+      'Hah... apa Dok? Napas saya berat...',
+      'Maaf Dok, saya ngantuk, bisa diulang?',
+      'Maksudnya bagaimana, Dok?',
+    ],
+    empathyReply: 'Iya, Dok... capek sekali rasanya. Terima kasih.',
+  }),
+  dialogue: [
+    q('keluhan-utama', 'rps', 'Keluhan utama Bapak apa?', 'Sesak, Dok, makin berat tiga hari ini. Dahak kuning kental banyak sekali.', ['keluhan utama', 'apa keluhan', 'keluhan apa', 'ada keluhan', 'cerita keluhan', 'mengapa datang']),
+    q('onset', 'rps', 'Sesaknya mulai memburuk sejak kapan?', 'Tiga hari, Dok. Awalnya batuk pilek, lalu sesak makin berat sampai tidak bisa tidur.', ['sejak kapan', 'kapan mulai', 'sudah berapa lama', 'berapa hari', 'memburuk']),
+    q('dahak', 'rps', 'Bagaimana dahaknya, warna dan jumlahnya?', 'Kuning kehijauan, kental, Dok, sehari satu gelas kecil. Tidak ada darah.', ['dahak', 'warna dahak', 'jumlah dahak', 'berdahak', 'batuk darah']),
+    q('demam', 'rps', 'Apakah ada demam atau menggigil?', 'Agak panas dua hari, Dok. Tidak menggigil.', ['demam', 'menggigil', 'panas']),
+    q('sesak-dasar', 'rps', 'Biasanya seberapa jauh Bapak sanggup berjalan sebelum sesak?', 'Dulu masih kuat ke ladang, sekarang jalan lima puluh meter saja berhenti, Dok.', ['seberapa jauh', 'jalan sesak', 'sanggup berjalan', 'sesak aktivitas', 'sesak biasanya']),
+    q('mengi', 'rps', 'Apakah napasnya berbunyi mengi atau ngik-ngik?', 'Iya, Dok, ngik-ngik terutama kalau malam.', ['mengi', 'ngik ngik', 'bunyi napas', 'napas berbunyi']),
+    q('nyeri-dada', 'rps', 'Apakah ada nyeri dada atau jantung berdebar?', 'Tidak nyeri, Dok, tapi jantung terasa berdebar cepat.', ['nyeri dada', 'dada sakit', 'berdebar', 'jantung'], { red: true }),
+    q('kesadaran', 'rps', 'Apakah Bapak merasa sangat mengantuk atau sakit kepala terutama pagi hari?', 'Ngantuk terus, Dok, dan kepala berat tiap pagi sudah seminggu.', ['mengantuk', 'ngantuk', 'sakit kepala pagi', 'kepala berat', 'kesadaran', 'bingung'], { red: true }),
+    q('bengkak-kaki', 'rps', 'Apakah kaki bengkak belakangan ini?', 'Iya, Dok, kaki bengkak dua minggu ini.', ['kaki bengkak', 'bengkak', 'edema']),
+    q('riwayat-ppok', 'rpd', 'Apakah Bapak pernah didiagnosis PPOK atau asma, dan sudah berapa kali dirawat karena sesak?', 'Dibilang PPOK di puskesmas tiga tahun lalu, Dok. Sudah dirawat dua kali tahun ini.', ['riwayat ppok', 'didiagnosis ppok', 'asma', 'pernah dirawat sesak', 'dirawat', 'ppok']),
+    q('riwayat-tb', 'rpd', 'Apakah Bapak pernah menderita TB atau minum obat TB?', 'Dua puluh tahun lalu pernah minum obat enam bulan, Dok, katanya sembuh.', ['riwayat tb', 'pernah tb', 'obat tb', 'tuberkulosis', 'minum obat enam bulan']),
+    q('rpd-jantung', 'rpd', 'Apakah ada penyakit jantung, darah tinggi, atau kencing manis?', 'Darah tinggi dibilang pernah, Dok. Jantung belum pernah diperiksa.', ['penyakit jantung', 'darah tinggi', 'diabetes', 'penyakit lain', 'riwayat penyakit', 'penyakit dahulu']),
+    q('obat-inhaler', 'obat', 'Apakah Bapak punya inhaler dan masih rutin memakainya?', 'Punya salbutamol, Dok, tapi sudah habis seminggu lalu. Yang tiotropium tidak dilanjut karena mahal.', ['inhaler', 'obat semprot', 'salbutamol', 'tiotropium', 'obat hirup', 'obat rutin']),
+    q('obat-tadi', 'obat', 'Obat apa yang sudah Bapak minum sejak sesak bertambah?', 'Teofilin sama obat batuk dari warung, Dok. Tidak banyak menolong.', ['sudah minum obat', 'minum obat apa', 'obat apa', 'obat warung', 'obat sendiri'], { gate: [55, 'Cuma obat batuk biasa, Dok.'] }),
+    q('rokok', 'sosial', 'Bapak merokok? Berapa batang sehari dan sudah berapa tahun?', 'Kretek dua bungkus sehari sejak umur dua puluh, Dok. Sampai sekarang masih merokok.', ['merokok', 'rokok', 'berapa batang', 'berapa tahun merokok', 'perokok']),
+    q('paparan', 'sosial', 'Apakah Bapak sering terpapar debu tembakau, asap dapur kayu, atau polusi lain?', 'Iya, Dok. Tiap hari memotong daun tembakau, di rumah masak pakai kayu bakar.', ['debu', 'asap', 'kayu bakar', 'polusi', 'paparan', 'terpapar']),
+    q('vaksin', 'rpd', 'Apakah Bapak pernah vaksin flu atau pneumonia?', 'Belum pernah, Dok.', ['vaksin', 'imunisasi', 'vaksin flu', 'vaksin pneumonia']),
+    q('alergi-obat', 'alergi', 'Apakah Bapak punya alergi obat?', 'Tidak ada, Dok.', ['alergi obat', 'alergi', 'alergi makanan']),
+    q('keluarga', 'keluarga', 'Apakah ada keluarga yang punya penyakit paru atau sesak kronis?', 'Bapak saya batuk menahun juga dulu, Dok.', ['riwayat keluarga', 'keluarga paru', 'keluarga sesak', 'keluarga sakit', 'keluarga']),
+    q('tinggal', 'sosial', 'Bapak tinggal dengan siapa dan siapa yang membawa kemari?', 'Dengan istri dan anak bungsu, Dok. Anak yang antar pakai motor.', ['tinggal dengan siapa', 'tinggal', 'siapa mengantar', 'siapa membawa', 'anak']),
+    ...iceEntries(
+      'Saya kira paru-paru saya kambuh lagi, Dok, karena rokok dan debu.',
+      'Saya takut dipasang selang napas dan tidak bisa pulang, Dok.',
+      'Saya mau napas lega lagi, Dok, jangan sampai sesak begini.',
+    ),
+    q('trauma', 'rps', 'Apakah ada benturan di dada atau kecelakaan?', 'Tidak ada, Dok.', ['benturan dada', 'kecelakaan', 'jatuh', 'trauma'], { distractor: true }),
+    q('diare', 'rps', 'Apakah ada diare atau muntah?', 'Tidak, Dok.', ['diare', 'muntah', 'mencret'], { distractor: true }),
+  ],
+  exam: [
+    exam('umum', 'umum', 'Keadaan umum dan napas', 'Tampak sakit berat, duduk tripod, napas bibir mencucu, otot bantu napas aktif, somnolen (GCS 14), sianosis bibir.', { abnormal: true }),
+    exam('paru', 'paru', 'Paru', 'Dada tong (barrel chest), perkusi hipersonor, mengi ekspirasi difus, ronki basah kasar kedua basal, suara napas menurun.', { abnormal: true }),
+    exam('kepala-leher', 'kepala-leher', 'Leher dan JVP', 'JVP meningkat 5+3 cmH2O, sianosis sentral.', { abnormal: true }),
+    exam('jantung', 'jantung', 'Jantung', 'Takikardia reguler, S2 pulmonal mengeras, tidak ada murmur.', { abnormal: true }),
+    exam('ekstremitas', 'ekstremitas', 'Ekstremitas', 'Edema pretibial bilateral ringan, akral hangat dengan sianosis ujung jari, jari tabuh tidak ada.', { abnormal: true }),
+    exam('neuro', 'neurologi', 'Neurologi', 'Somnolen, asteriksis (flapping tremor) halus, tidak ada defisit fokal.', { abnormal: true }),
+    exam('abdomen', 'abdomen', 'Abdomen', 'Supel, hepar teraba 2 cm, tidak ada nyeri tekan.', { distractor: true }),
+    exam('kulit', 'kulit', 'Kulit', 'Hangat, tidak ada ruam.', { distractor: true }),
+  ],
+  tests: makeTests(MODE, [
+    [
+      'agd',
+      [
+        { text: 'pH 7,14, pCO2 96, pO2 88, HCO3 34 (asidosis respiratorik memburuk setelah oksigen aliran tinggi).', abnormal: true, critical: true, afterTreatment: ['oksigen-nrm-tinggi'] },
+        { text: 'pH 7,35, pCO2 62, pO2 66, HCO3 34 (membaik dengan NIV dan oksigen terkontrol).', abnormal: true, afterTreatment: ['niv-bipap'] },
+        { text: 'pH 7,18, pCO2 90, pO2 44, HCO3 33 (asidosis respiratorik berat dan hipoksemia).', abnormal: true, critical: true, minStage: 2 },
+        { text: 'pH 7,28, pCO2 74, pO2 52, HCO3 33 (asidosis respiratorik akut pada kronik, hiperkapnia).', abnormal: true, critical: true },
+      ],
+    ],
+    ['foto-toraks', [{ text: 'Foto toraks: hiperinflasi, diafragma mendatar, corakan bronkovaskular meningkat, tidak ada pneumotoraks atau konsolidasi baru.', abnormal: true }]],
+    ['dpl', [{ text: 'Hb 17,6 g/dL, hematokrit 54% (poliglobulia sekunder), leukosit 14.200/uL, trombosit 260.000/uL.', abnormal: true }]],
+    ['ekg', [{ text: 'EKG: sinus takikardia 112x/menit, P pulmonal di II, III, aVF, deviasi aksis ke kanan.', abnormal: true }]],
+    ['ekokardiografi', [{ text: 'Ekokardiografi: ventrikel kanan melebar, tekanan arteri pulmonal meningkat, fungsi sistolik kiri baik (EF 58%).', abnormal: true }]],
+    ['prokalsitonin', [{ text: 'Prokalsitonin 0,9 ng/mL (menunjang infeksi bakteri).', abnormal: true }]],
+    ['elektrolit', [{ text: 'Na 134, K 4,2, Cl 92 mmol/L.', abnormal: true }]],
+    ['ureum-kreatinin', [{ text: 'Ureum 38, kreatinin 1,0 mg/dL.', abnormal: false }]],
+    ['gds', [{ text: 'Glukosa darah sewaktu 118 mg/dL.', abnormal: false }]],
+    ['troponin', [{ text: 'Troponin I 0,03 ng/mL (tidak mendukung infark).', abnormal: false }]],
+    ['bta', [{ text: 'BTA sputum: negatif.', abnormal: false }], 60],
+    ['laktat', [{ text: 'Laktat 2,2 mmol/L (meningkat ringan).', abnormal: true }]],
+    'ct-kepala',
+  ]),
+  panels: [
+    { id: 'panel-ppok', label: 'Panel eksaserbasi PPOK', testIds: ['agd', 'foto-toraks', 'dpl', 'ekg', 'prokalsitonin'] },
+  ],
+  diagnoses: [
+    { id: 'ppok-eksaserbasi-gagal-napas', label: 'Eksaserbasi akut PPOK dengan gagal napas hiperkapnia' },
+    { id: 'edema-paru', label: 'Edema paru kardiogenik' },
+    { id: 'pneumonia', label: 'Pneumonia komunitas tanpa PPOK' },
+    { id: 'emboli-paru', label: 'Emboli paru' },
+    { id: 'pneumotoraks', label: 'Pneumotoraks' },
+  ],
+  correctDiagnosisId: 'ppok-eksaserbasi-gagal-napas',
+  differentialIds: ['edema-paru', 'pneumonia', 'emboli-paru', 'pneumotoraks'],
+  treatments: pickTreatments([
+    'akses-iv',
+    'monitor',
+    'oksigen-terkontrol',
+    'oksigen-nrm-tinggi',
+    'niv-bipap',
+    'nebul-sabadipra',
+    'metilprednisolon-iv',
+    'antibiotik-seftriakson',
+    'morfin-iv',
+    'furosemid-iv',
+    'parasetamol',
+  ]),
+  indicatedTreatmentIds: ['akses-iv', 'monitor', 'oksigen-terkontrol', 'nebul-sabadipra', 'metilprednisolon-iv', 'antibiotik-seftriakson', 'niv-bipap'],
+  criticalTreatmentIds: ['oksigen-terkontrol', 'nebul-sabadipra', 'niv-bipap'],
+  contraindicated: [
+    { id: 'oksigen-nrm-tinggi', reason: 'Oksigen aliran tinggi pada retensi CO2 menekan dorongan napas dan memperburuk hiperkapnia; target SpO2 88-92%.' },
+    { id: 'morfin-iv', reason: 'Opioid menekan pernapasan pada pasien yang sudah hiperkapnia dan somnolen.' },
+  ],
+  dispositions: pickDispositions(['pulang', 'observasi-igd', 'rawat-bangsal', 'rawat-hcu', 'rawat-icu']),
+  correctDispositionId: 'rawat-icu',
+  acceptableDispositionIds: ['rawat-hcu'],
+  er: {
+    arrivalSec: 30,
+    triage: {
+      esi: 2,
+      zone: 'red',
+      reason: 'Sesak berat dengan SpO2 82%, napas 30x/menit, bibir sianosis, dan mulai mengantuk pada perokok berat: gagal napas dengan kecurigaan hiperkapnia.',
+    },
+    timeline: [
+      {
+        stage: 1,
+        atSec: 120,
+        vitalsDelta: { hr: 8, rr: 4, spo2: -3, gcs: -1 },
+        line: 'Sesak dan rasa ngantuk bertambah, bibir makin kebiruan.',
+        averted: ['oksigen-terkontrol', 'nebul-sabadipra', 'niv-bipap'],
+      },
+      {
+        stage: 2,
+        atSec: 300,
+        vitalsDelta: { hr: 14, sbp: -10, dbp: -6, rr: -6, spo2: -8, gcs: -3 },
+        line: 'Napas melambat dan kesadaran menurun: tanda kelelahan napas dan penumpukan CO2.',
+        averted: ['oksigen-terkontrol', 'niv-bipap'],
+      },
+      {
+        stage: 3,
+        atSec: 500,
+        vitalsDelta: { hr: -70, sbp: -50, dbp: -30, rr: -20, spo2: -30, gcs: -6 },
+        line: 'Pasien henti napas dan henti jantung.',
+        averted: ['oksigen-terkontrol', 'niv-bipap'],
+      },
+    ],
+    effects: [
+      { treatmentId: 'oksigen-terkontrol', improves: true, vitalsDelta: { spo2: 8, rr: -2 } },
+      { treatmentId: 'nebul-sabadipra', vitalsDelta: { rr: -4, hr: -4 } },
+      { treatmentId: 'niv-bipap', improves: true, vitalsDelta: { rr: -6, hr: -6, gcs: 1, spo2: 3 } },
+      { treatmentId: 'metilprednisolon-iv', vitalsDelta: { rr: -1 } },
+      { treatmentId: 'antibiotik-seftriakson', vitalsDelta: { temp: -0.3 } },
+      { treatmentId: 'oksigen-nrm-tinggi', harmful: true, vitalsDelta: { spo2: 14, gcs: -2, rr: -4 } },
+      { treatmentId: 'morfin-iv', harmful: true, vitalsDelta: { rr: -6, gcs: -2 } },
+    ],
+    criticalDeadlineSec: 300,
+  },
+  guidelineIds: ['pdpi-ppok', 'gold-copd-2024'],
+  rubric: buildRubric({
+    criteria: [
+      crit('an-01', 'anamnesis', 2, 'Perburukan dan kondisi dasar', P.asked(['onset', 'sesak-dasar', 'dahak'], 2), {
+        met: 'Awitan perburukan, kemampuan dasar, dan dahak ditanyakan.',
+        partial: 'Sebagian informasi perburukan ditanyakan.',
+        missed: 'Perburukan dan kondisi dasar tidak digali.',
+      }, { partial: P.asked(['onset', 'sesak-dasar', 'dahak'], 1), ref: 'gold-copd-2024', improve: 'Tanyakan lama perburukan, sesak dasar, dan perubahan dahak: tiga ciri eksaserbasi.' }),
+      crit('an-02', 'anamnesis', 3, 'Tanda hiperkapnia dan kesadaran', P.asked(['kesadaran'], 1), {
+        met: 'Kantuk dan sakit kepala pagi ditanyakan, jadi hiperkapnia dicurigai.',
+        missed: 'Tanda hiperkapnia tidak ditanyakan.',
+      }, { ref: 'gold-copd-2024', improve: 'Kantuk dan sakit kepala pagi menandakan retensi CO2; ini mengubah cara memberi oksigen.' }),
+      crit('an-03', 'anamnesis', 2, 'Riwayat PPOK, inhaler, dan kepatuhan', P.asked(['riwayat-ppok', 'obat-inhaler', 'obat-tadi'], 2), {
+        met: 'Riwayat PPOK, inhaler, dan obat sebelumnya ditanyakan.',
+        partial: 'Hanya sebagian riwayat pengobatan ditanyakan.',
+        missed: 'Riwayat pengobatan tidak ditanyakan.',
+      }, { partial: P.asked(['riwayat-ppok', 'obat-inhaler', 'obat-tadi'], 1), improve: 'Tanyakan diagnosis, inhaler yang habis, dan obat yang sudah diminum.' }),
+      crit('an-04', 'anamnesis', 1, 'Faktor risiko: rokok dan paparan', P.asked(['rokok', 'paparan'], 1), {
+        met: 'Rokok atau paparan debu ditanyakan.',
+        missed: 'Faktor risiko tidak ditanyakan.',
+      }, { improve: 'Hitung beban merokok dan tanyakan paparan debu atau asap kayu.' }),
+      crit('an-05', 'anamnesis', 1, 'Diagnosis banding: TB dan jantung', P.asked(['riwayat-tb', 'rpd-jantung', 'bengkak-kaki', 'nyeri-dada'], 2), {
+        met: 'TB dan penyakit jantung dipertimbangkan.',
+        missed: 'Diagnosis banding tidak digali.',
+      }, { improve: 'Singkirkan TB, gagal jantung, dan nyeri dada pada sesak akut.' }),
+      crit('pe-01', 'pemeriksaan', 3, 'Menilai kerja napas dan kesadaran', P.examined(['umum', 'neuro'], 2), {
+        met: 'Kerja napas, sianosis, dan kesadaran dinilai.',
+        partial: 'Hanya salah satu yang dinilai.',
+        missed: 'Kerja napas dan kesadaran tidak dinilai.',
+      }, { partial: P.examined(['umum', 'neuro'], 1), improve: 'Nilai otot bantu napas, sianosis, kesadaran, dan asteriksis.' }),
+      crit('pe-02', 'pemeriksaan', 2, 'Paru', P.examined(['paru']), {
+        met: 'Paru diperiksa dan mengi serta hiperinflasi dikenali.',
+        missed: 'Paru tidak diperiksa.',
+      }, { improve: 'Perkusi dan auskultasi paru mencari mengi, ronki, dan tanda pneumotoraks.' }),
+      crit('pe-03', 'pemeriksaan', 1, 'Tanda gagal jantung kanan', P.examined(['kepala-leher', 'ekstremitas', 'jantung'], 2), {
+        met: 'JVP, edema, dan jantung diperiksa.',
+        missed: 'Tanda kor pulmonal tidak dicari.',
+      }, { improve: 'Periksa JVP dan edema untuk kor pulmonal.' }),
+      crit('pn-01', 'penalaran', 3, 'Analisis gas darah', P.ordered(['agd']), {
+        met: 'Gas darah dipesan dan hiperkapnia terdeteksi.',
+        missed: 'Gas darah tidak dipesan.',
+      }, { ref: 'gold-copd-2024', improve: 'Gas darah menentukan asidosis respiratorik dan indikasi ventilasi non-invasif.' }),
+      crit('pn-02', 'penalaran', 2, 'Foto toraks dan EKG', P.ordered(['foto-toraks', 'ekg'], 2), {
+        met: 'Foto toraks dan EKG dikerjakan.',
+        partial: 'Hanya salah satu yang dikerjakan.',
+        missed: 'Foto toraks dan EKG tidak dikerjakan.',
+      }, { partial: P.ordered(['foto-toraks', 'ekg'], 1), ref: 'pdpi-ppok', improve: 'Foto toraks menyingkirkan pneumonia dan pneumotoraks; EKG menilai beban jantung kanan.' }),
+      crit('pn-03', 'penalaran', 2, 'Darah lengkap dan penanda infeksi', P.ordered(['dpl', 'prokalsitonin'], 1), {
+        met: 'Penanda infeksi diperiksa.',
+        missed: 'Penanda infeksi tidak diperiksa.',
+      }, { improve: 'Leukosit dan prokalsitonin membantu memutuskan antibiotik.' }),
+      crit('pn-04', 'penalaran', 3, 'Diagnosis eksaserbasi PPOK dengan gagal napas', P.dx, {
+        met: 'Diagnosis eksaserbasi PPOK dengan gagal napas benar.',
+        missed: 'Diagnosis tidak sesuai dengan PPOK yang memburuk dan hiperkapnia.',
+      }, { ref: 'pdpi-ppok', improve: 'Perokok berat dengan sesak, dahak purulen, dan hiperkapnia adalah eksaserbasi PPOK.' }),
+      crit('pn-05', 'penalaran', 1, 'Triase zona merah', { kind: 'triage', equals: 'correct' }, {
+        met: 'Pasien ditempatkan di zona merah.',
+        missed: 'Zona triase tidak sesuai kegawatan.',
+      }, { improve: 'SpO2 82% dengan kantuk masuk zona merah.' }),
+      crit('tr-01', 'terapi', 3, 'Oksigen terkontrol (target 88-92%)', P.treated(['oksigen-terkontrol']), {
+        met: 'Oksigen terkontrol diberikan.',
+        missed: 'Oksigen terkontrol tidak diberikan.',
+      }, { ref: 'gold-copd-2024', improve: 'Pada PPOK dengan retensi CO2 targetkan SpO2 88-92% dengan sungkup venturi atau kanul.', highlight: 'Oksigen dititrasi, bukan dibanjiri.' }),
+      crit('tr-02', 'terapi', 3, 'Bronkodilator nebulisasi', P.treated(['nebul-sabadipra']), {
+        met: 'Nebulisasi salbutamol dan ipratropium diberikan.',
+        missed: 'Bronkodilator tidak diberikan.',
+      }, { ref: 'gold-copd-2024', improve: 'Bronkodilator kerja pendek adalah terapi dasar eksaserbasi.' }),
+      crit('tr-03', 'terapi', 3, 'Ventilasi non-invasif', P.treated(['niv-bipap']), {
+        met: 'BiPAP dipasang.',
+        missed: 'Ventilasi non-invasif tidak dipasang padahal pH di bawah 7,35 dengan pCO2 tinggi.',
+      }, { ref: 'gold-copd-2024', improve: 'Asidosis respiratorik dengan pH di bawah 7,35 adalah indikasi NIV.' }),
+      crit('tr-04', 'terapi', 2, 'Kortikosteroid dan antibiotik', P.treated(['metilprednisolon-iv', 'antibiotik-seftriakson'], undefined, 2), {
+        met: 'Kortikosteroid dan antibiotik diberikan.',
+        partial: 'Hanya salah satu yang diberikan.',
+        missed: 'Kortikosteroid dan antibiotik tidak diberikan.',
+      }, { partial: P.treated(['metilprednisolon-iv', 'antibiotik-seftriakson'], undefined, 1), ref: 'pdpi-ppok', improve: 'Dahak purulen dan sesak berat mendapat steroid sistemik dan antibiotik.' }),
+      crit('tr-05', 'terapi', 1, 'Akses vena dan monitoring', P.treated(['akses-iv', 'monitor'], undefined, 2), {
+        met: 'Akses IV dan monitoring dipasang.',
+        partial: 'Hanya salah satu dari akses IV atau monitoring.',
+        missed: 'Akses IV dan monitoring tidak dipasang.',
+      }, { partial: P.treated(['akses-iv', 'monitor'], undefined, 1), improve: 'Pasang akses IV dan monitor SpO2 serta EKG kontinu.' }),
+      crit('tr-06', 'terapi', 2, 'Disposisi perawatan intensif', P.dispo, {
+        met: 'Pasien dirawat di ICU.',
+        partial: 'Dirawat di HCU. Pilihan ini masih bisa diterima.',
+        missed: 'Disposisi tidak sesuai dengan gagal napas.',
+      }, { partial: { kind: 'disposition', equals: 'acceptable' }, ref: 'gold-copd-2024', improve: 'Gagal napas hiperkapnia dengan NIV dirawat di ICU atau HCU.' }),
+      crit('ks-01', 'keselamatan', 3, 'Oksigen terkontrol dalam 5 menit sejak masuk bed', P.treated(['oksigen-terkontrol'], 300), {
+        met: 'Oksigen diberikan dalam batas waktu.',
+        missed: 'Oksigen terlambat atau tidak diberikan.',
+      }, { ref: 'gold-copd-2024', improve: 'Hipoksemia berat memerlukan oksigen dalam beberapa menit, tetapi dengan target yang tepat.' }),
+      crit('ks-02', 'keselamatan', 3, 'Tidak memberi oksigen aliran tinggi atau opioid', P.not(P.treated('contraindicated')), {
+        met: 'Tidak ada tindakan atau obat kontraindikasi.',
+        missed: 'Oksigen aliran tinggi atau morfin diberikan.',
+      }, { ref: 'gold-copd-2024', improve: 'Hindari oksigen berlebihan dan sedatif pada retensi CO2.' }),
+      crit('ks-03', 'keselamatan', 3, 'Pasien selamat', P.survived, {
+        met: 'Pasien selamat sampai disposisi.',
+        missed: 'Pasien meninggal selama penanganan.',
+      }, { improve: 'Oksigen terkontrol, bronkodilator, dan NIV lebih awal mencegah kelelahan napas.' }),
+      safetyNetCriterion(1),
+    ],
+    breaches: [
+      { id: 'br-kontra', when: P.treated('contraindicated'), what: 'Memberikan oksigen aliran tinggi atau morfin pada eksaserbasi PPOK dengan hiperkapnia.', guidelineRef: 'gold-copd-2024' },
+      { id: 'br-pulang', when: { kind: 'disposition', equals: 'pulang' }, what: 'Memulangkan pasien dengan gagal napas hiperkapnia.', guidelineRef: 'pdpi-ppok' },
+      { id: 'br-tanpa-kritis', when: P.not(P.treated('critical')), what: 'Tidak memberikan oksigen terkontrol, bronkodilator, atau NIV pada eksaserbasi PPOK berat.', guidelineRef: 'gold-copd-2024' },
+    ],
+    teachingPoints: [
+      'Pada PPOK dengan retensi CO2, oksigen dititrasi ke SpO2 88-92%: terlalu banyak oksigen bisa memperburuk hiperkapnia.',
+      'Eksaserbasi ditandai tiga hal: sesak bertambah, dahak bertambah, dan dahak purulen.',
+      'Bronkodilator, steroid sistemik, dan antibiotik adalah terapi dasar; NIV menyelamatkan dari intubasi.',
+      'Sedatif dan opioid dihindari pada pasien yang mengantuk karena CO2.',
+    ],
+  }),
+}

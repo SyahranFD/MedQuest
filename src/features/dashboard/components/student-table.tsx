@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { ArrowDown, ArrowUp, ChevronsUpDown } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
-import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
 import type { SortDir, SortKey } from '../student-table'
 import type { StudentSummary } from '../types'
@@ -16,7 +15,7 @@ interface StudentTableProps {
   onSort: (key: SortKey) => void
 }
 
-const cell = 'px-4 py-3 align-middle'
+const cell = 'px-3 align-middle first:rounded-l-row last:rounded-r-row'
 
 function moveFocus(e: KeyboardEvent<HTMLTableSectionElement>) {
   if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
@@ -40,15 +39,19 @@ export function StudentTable({ rows, sortKey, sortDir, onSort }: StudentTablePro
       <th
         scope="col"
         aria-sort={active ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-        className={cn('px-4 py-1 text-left text-label font-semibold text-ink-2 uppercase', className)}
+        className={cn('border-b border-line px-3 text-left text-meta font-medium text-ink-3', className)}
       >
         <button
           type="button"
           onClick={() => onSort(key)}
-          className="-mx-2 inline-flex min-h-11 items-center gap-1.5 rounded-xs px-2 uppercase transition-colors duration-100 hover:text-ink-1 active:scale-[.985]"
+          className={cn(
+            '-mx-2 inline-flex h-10 items-center gap-1.5 rounded-row px-2 transition-colors duration-100 hover:text-ink-1 pointer-coarse:h-11',
+            active && 'text-ink-1',
+            className?.includes('text-right') && 'flex-row-reverse',
+          )}
         >
           {label}
-          <Icon aria-hidden="true" className={cn('size-3.5', !active && 'text-ink-4')} strokeWidth={2.25} />
+          <Icon aria-hidden="true" className={cn('size-3.5', !active && 'text-ink-4')} strokeWidth={1.5} />
           {active && <span className="sr-only">{dt(sortDir === 'asc' ? 'students.sortAsc' : 'students.sortDesc')}</span>}
         </button>
       </th>
@@ -57,81 +60,72 @@ export function StudentTable({ rows, sortKey, sortDir, onSort }: StudentTablePro
 
   return (
     <>
-    <ul className="divide-y divide-line overflow-hidden rounded-md border border-line bg-surface sm:hidden" aria-label={dt('students.caption')}>
-      {rows.map((s) => (
-        <li key={s.id}>
-          <Link
-            to={'/dosen/mahasiswa/$studentId' as '/'}
-            params={{ studentId: s.id } as never}
-            className="flex min-h-11 items-center gap-3 px-4 py-3 transition-colors duration-100 active:bg-panel"
-          >
-            <Avatar initials={s.initials} />
-            <span className="flex min-w-0 flex-1 flex-col gap-1.5">
-              <span className="flex items-start justify-between gap-2">
-                <span className="flex min-w-0 flex-col">
-                  <span className="truncate font-semibold text-ink-1">{s.name}</span>
-                  <span className="text-label text-ink-muted">{s.nim}</span>
+      <ul className="flex flex-col sm:hidden" aria-label={dt('students.caption')}>
+        {rows.map((s) => (
+          <li key={s.id}>
+            <Link
+              to={'/dosen/mahasiswa/$studentId' as '/'}
+              params={{ studentId: s.id } as never}
+              className="flex min-h-14 items-center gap-3 rounded-row px-2 py-2 transition-colors duration-100 active:bg-hover"
+            >
+              <Avatar initials={s.initials} />
+              <span className="flex min-w-0 flex-1 flex-col">
+                <span className="truncate text-body-s font-medium text-ink-1">{s.name}</span>
+                <span className="text-meta text-ink-3">
+                  {s.nim}, {dt('students.progressText', { done: s.casesCompleted, total: s.casesTotal })}
                 </span>
-                <StatusBadge status={s.status} />
               </span>
-              <Progress value={s.progress} aria-hidden="true" className="h-1.5" />
-              <span className="flex justify-between text-label text-ink-muted tabular-nums">
-                <span>{dt('students.progressText', { done: s.casesCompleted, total: s.casesTotal })}</span>
-                <span className="font-semibold text-ink-1">{s.averagePercent ?? dt('students.noScore')}</span>
-              </span>
-            </span>
-          </Link>
-        </li>
-      ))}
-    </ul>
-    <div className="hidden overflow-x-auto rounded-md border border-line bg-surface sm:block">
-      <table className="w-full min-w-[46rem] border-collapse text-body-s">
-        <caption className="sr-only">{dt('students.caption')}</caption>
-        <thead className="border-b border-line-strong bg-panel">
-          <tr>
-            {head('name', dt('students.col.name'), 'sticky left-0 z-10 bg-panel')}
-            {head('progress', dt('students.col.progress'))}
-            {head('average', dt('students.col.average'))}
-            {head('lastActive', dt('students.col.last'))}
-            {head('status', dt('students.col.status'))}
-          </tr>
-        </thead>
-        <tbody onKeyDown={moveFocus} className="divide-y divide-line">
-          {rows.map((s) => (
-            <tr key={s.id} className="transition-colors duration-100 hover:bg-panel/60">
-              <th scope="row" className={cn(cell, 'sticky left-0 z-10 bg-surface text-left font-normal')}>
-                <Link
-                  to={'/dosen/mahasiswa/$studentId' as '/'}
-                  params={{ studentId: s.id } as never}
-                  data-row-link
-                  className="-m-1 flex min-h-11 items-center gap-3 rounded-sm p-1"
-                >
-                  <Avatar initials={s.initials} />
-                  <span className="flex min-w-0 flex-col">
-                    <span className="max-w-44 truncate font-semibold text-ink-1">{s.name}</span>
-                    <span className="text-label text-ink-muted">{s.nim}</span>
-                  </span>
-                </Link>
-              </th>
-              <td className={cn(cell, 'min-w-44')}>
-                <div className="flex flex-col gap-1.5">
-                  <Progress value={s.progress} aria-label={dt('students.progressText', { done: s.casesCompleted, total: s.casesTotal })} className="h-1.5" />
-                  <span className="text-label text-ink-muted tabular-nums">{dt('students.progressText', { done: s.casesCompleted, total: s.casesTotal })}</span>
-                </div>
-              </td>
-              <td className={cn(cell, 'font-semibold text-ink-1 tabular-nums')}>{s.averagePercent ?? <span className="font-normal text-ink-muted">{dt('students.noScore')}</span>}</td>
-              <td className={cell}>
-                <span className="block text-ink-1">{daysAgo(s.daysSinceActive)}</span>
-                {s.lastActiveAt && <span className="text-label text-ink-muted">{date(s.lastActiveAt)}</span>}
-              </td>
-              <td className={cell}>
-                <StatusBadge status={s.status} />
-              </td>
+              <span className="w-8 text-right text-body-s text-ink-2 tabular-nums">{s.averagePercent ?? '-'}</span>
+              <StatusBadge status={s.status} />
+            </Link>
+          </li>
+        ))}
+      </ul>
+      <div className="hidden overflow-x-auto sm:block">
+        <table className="w-full min-w-[44rem] border-separate border-spacing-0 text-body-s">
+          <caption className="sr-only">{dt('students.caption')}</caption>
+          <thead>
+            <tr className="h-10">
+              {head('name', dt('students.col.name'))}
+              {head('progress', dt('students.col.progress'))}
+              {head('average', dt('students.col.average'), 'w-36 text-right')}
+              {head('lastActive', dt('students.col.last'))}
+              {head('status', dt('students.col.status'), 'w-36')}
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody onKeyDown={moveFocus} className="[&_tr]:h-14">
+            {rows.map((s) => (
+              <tr key={s.id} className="group transition-colors duration-100 hover:bg-hover">
+                <th scope="row" className={cn(cell, 'text-left font-normal')}>
+                  <Link
+                    to={'/dosen/mahasiswa/$studentId' as '/'}
+                    params={{ studentId: s.id } as never}
+                    data-row-link
+                    className="-m-1 flex items-center gap-3 rounded-row p-1"
+                  >
+                    <Avatar initials={s.initials} />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="max-w-56 truncate font-medium text-ink-1">{s.name}</span>
+                      <span className="text-meta text-ink-3">{s.nim}</span>
+                    </span>
+                  </Link>
+                </th>
+                <td className={cn(cell, 'text-ink-2 tabular-nums')}>{dt('students.progressText', { done: s.casesCompleted, total: s.casesTotal })}</td>
+                <td className={cn(cell, 'text-right font-medium text-ink-1 tabular-nums')}>
+                  {s.averagePercent ?? <span className="font-normal text-ink-3">{dt('students.noScore')}</span>}
+                </td>
+                <td className={cell}>
+                  <span className="block text-ink-2">{daysAgo(s.daysSinceActive)}</span>
+                  {s.lastActiveAt && <span className="text-meta text-ink-3">{date(s.lastActiveAt)}</span>}
+                </td>
+                <td className={cell}>
+                  <StatusBadge status={s.status} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </>
   )
 }

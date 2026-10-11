@@ -44,5 +44,12 @@ export function createDemoRecords(): SessionRecord[] {
       ['er-dengue-dss', 'average'],
       ['er-malaria-berat', 'bad'],
     ]),
+    record('demo-poli-asma', 'poli', '2026-10-07T10:20:00.000Z', [['poli-asma', 'perfect']]),
+    record('demo-poli-tifoid', 'poli', '2026-10-09T14:10:00.000Z', [['poli-tifoid', 'average']]),
+    record('demo-er-shift-2', 'er', '2026-10-10T20:05:00.000Z', [
+      ['er-stroke-iskemik', 'average'],
+      ['er-anafilaksis', 'perfect'],
+      ['er-kad', 'bad'],
+    ]),
   ]
 }

@@ -35,13 +35,18 @@ describe('Badge', () => {
   it('uses solid status classes and never a tonal pair', () => {
     render(<Badge variant="danger">Kritis</Badge>)
     const cls = screen.getByText('Kritis').className
-    expect(cls).toContain('bg-danger')
-    expect(cls).toContain('text-danger-ink')
+    expect(cls).toContain('bg-chip-danger')
+    expect(cls).toContain('text-chip-danger-ink')
   })
 
-  it('maps a category to its AA-safe fill', () => {
+  it('gives info its own bright blue fill', () => {
+    render(<Badge variant="info">Lulus</Badge>)
+    expect(screen.getByText('Lulus').className).toContain('bg-chip-info')
+  })
+
+  it('maps a category to its bright chip fill', () => {
     render(<Badge variant="category" category="cardio">Kardio</Badge>)
-    expect(screen.getByText('Kardio').className).toContain('bg-cat-cardio-fill')
+    expect(screen.getByText('Kardio').className).toContain('bg-chip-cardio')
   })
 })
 

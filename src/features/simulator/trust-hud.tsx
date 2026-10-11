@@ -48,7 +48,7 @@ interface TrustHudProps {
 }
 
 /** The "+5" / "-3" chip: springs in on its own, then removes itself. Remounted per action via `key`. */
-function DeltaChip({ text, positive }: { text: string; positive: boolean }) {
+export function DeltaChip({ text, positive }: { text: string; positive: boolean }) {
   const reduced = useReducedMotion()
   const [visible, setVisible] = useState(true)
   useEffect(() => {

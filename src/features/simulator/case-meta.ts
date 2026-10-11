@@ -12,9 +12,21 @@ const CATEGORY_BY_CASE: Record<string, BadgeCategory> = {
   'poli-tb-paru': 'pulmo',
   'poli-hipertensi': 'cardio',
   'poli-dm2': 'endocrine',
+  'er-stroke-iskemik': 'neuro',
+  'er-sepsis-pneumonia': 'infection',
+  'er-kad': 'endocrine',
+  'er-ppok-eksaserbasi': 'pulmo',
+  'er-ugib-varises': 'infection',
+  'er-anafilaksis': 'pulmo',
+  'poli-tifoid': 'infection',
+  'poli-isk': 'infection',
+  'poli-asma': 'pulmo',
+  'poli-pneumonia': 'pulmo',
+  'poli-hipertensi-hamil': 'cardio',
+  'poli-kusta': 'infection',
 }
 
-/** Specialty badge hue: fixed for the six demo cases, keyword fallback for anything added later. */
+/** Specialty badge hue: fixed for every shipped case, keyword fallback for anything added later. */
 export function categoryOf(c: Pick<Case, 'id' | 'specialty'>): BadgeCategory {
   const known = CATEGORY_BY_CASE[c.id]
   if (known) return known
@@ -33,6 +45,18 @@ const LABEL_BY_CASE: Record<string, string> = {
   'poli-tb-paru': 'Paru',
   'poli-hipertensi': 'Kardiovaskular',
   'poli-dm2': 'Endokrin',
+  'er-stroke-iskemik': 'Neurologi',
+  'er-sepsis-pneumonia': 'Infeksi',
+  'er-kad': 'Endokrin',
+  'er-ppok-eksaserbasi': 'Paru',
+  'er-ugib-varises': 'Hepatologi',
+  'er-anafilaksis': 'Alergi',
+  'poli-tifoid': 'Infeksi tropis',
+  'poli-isk': 'Urologi',
+  'poli-asma': 'Paru',
+  'poli-pneumonia': 'Paru',
+  'poli-hipertensi-hamil': 'Obstetri',
+  'poli-kusta': 'Kulit dan kelamin',
 }
 
 /** Short specialty for the badge. Fixed for the demo cases; otherwise the focus segment of "Penyakit Dalam / X / IGD". */

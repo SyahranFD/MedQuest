@@ -2,6 +2,7 @@ import { ErrorState } from '@/components/page/error-state'
 import { PageBody } from '@/components/page/page-body'
 import { PageHeader } from '@/components/page/page-header'
 import { Reveal, RevealGroup } from '@/components/ui/reveal'
+import { Skeleton } from '@/components/ui/skeleton'
 import { usePageTitle } from '@/lib/use-page-title'
 import { AttentionPanel } from './components/attention-panel'
 import { SampleBadge } from './components/badges'
@@ -19,19 +20,23 @@ export function OverviewPage() {
   const { data, isPending, isError, refetch } = useClassOverview()
   usePageTitle(dt('overview.title'))
   return (
-    <PageBody wide className="flex flex-col gap-6">
+    <PageBody wide className="flex flex-col gap-8">
       <PageHeader
-        eyebrow={<SampleBadge />}
         title={dt('overview.title')}
         description={
-          data
-            ? dt('overview.desc', {
+          data ? (
+            <>
+              {dt('overview.desc', {
                 faculty: data.meta.faculty,
                 program: data.meta.program,
                 cohort: data.meta.cohort,
                 className: data.meta.className,
-              })
-            : dt('sample.note')
+              })}
+              <SampleBadge />
+            </>
+          ) : (
+            <Skeleton className="h-[1.3125rem] w-80" />
+          )
         }
         className="pb-0"
       />
@@ -39,20 +44,19 @@ export function OverviewPage() {
       {isError && <ErrorState title={dt('loadError')} description={dt('loadErrorBody')} onRetry={() => void refetch()} />}
       {data && <KpiStrip kpis={data.kpis} />}
 
-      <RevealGroup className="flex flex-col gap-6" stagger={0.06}>
-        <Reveal y={16} className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <AttentionPanel />
+
+      <RevealGroup className="flex flex-col gap-8" stagger={0.06}>
+        <Reveal y={12} className="grid gap-x-10 gap-y-8 lg:grid-cols-2">
           <TrendPanel />
           <CompetencyPanel />
         </Reveal>
-        <Reveal y={16}>
+        <Reveal y={12} className="grid gap-x-10 gap-y-8 lg:grid-cols-2">
+          <CaseRankingPanel />
           <MissedPanel />
         </Reveal>
-        <Reveal y={16} className="grid gap-6 lg:grid-cols-2">
-          <AttentionPanel />
-          <CaseRankingPanel />
-        </Reveal>
       </RevealGroup>
-      <p className="text-label text-ink-muted">{dt('sample.note')}</p>
+      <p className="text-meta text-ink-3">{dt('sample.note')}</p>
     </PageBody>
   )
 }

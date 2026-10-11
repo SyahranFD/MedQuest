@@ -1,12 +1,12 @@
 import { Link, useRouterState } from '@tanstack/react-router'
 import { motion } from 'motion/react'
-import { useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { spring, useReducedMotion } from '@/lib/motion'
 import { useT, type CoreKey } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { Breadcrumbs, RouteAnnouncer } from './breadcrumbs'
 import { LocaleToggle } from './locale-toggle'
-import { LogoMark } from './logo'
+import { Logo, LogoMark } from './logo'
 import { NAV_ICON_SIZE, NAV_ICON_STROKE, type NavItem } from './nav'
 import { RouteProgress } from './route-progress'
 
@@ -29,21 +29,23 @@ export function ShellFrame({ nav, area, actions, children }: ShellFrameProps) {
   const reduced = useReducedMotion()
   const pathname = useRouterState({ select: (s) => s.location.pathname })
   const indicatorId = useId()
+  const scroller = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = 0
+  }, [pathname])
 
   return (
-    <div data-slot="shell" className="min-h-dvh bg-ground lg:grid lg:grid-cols-[15rem_1fr]">
+    <div data-slot="shell" className="min-h-dvh bg-chrome lg:grid lg:h-dvh lg:grid-cols-[var(--mq-sidebar)_1fr] lg:overflow-hidden">
       <RouteProgress />
       <RouteAnnouncer />
 
-      <aside className="hidden border-r border-line bg-panel lg:sticky lg:top-0 lg:flex lg:h-dvh lg:flex-col lg:gap-8 lg:px-3 lg:py-5">
-        <Link to="/" className="flex items-center gap-2.5 rounded-sm px-2 py-1">
-          <LogoMark className="size-9" />
-          <span className="flex flex-col leading-tight">
-            <span className="font-display text-body font-bold text-ink-1">{t('brand.name')}</span>
-            <span className="text-label text-ink-muted">{t(area)}</span>
-          </span>
+      <aside className="hidden lg:flex lg:h-dvh lg:flex-col lg:gap-8 lg:px-4 lg:py-6">
+        <Link to="/" className="flex flex-col gap-1 rounded-row px-2 py-1">
+          <Logo className="h-14 self-start" />
+          <span className="text-body-s text-ink-2">{t(area)}</span>
         </Link>
-        <nav aria-label={t('nav.main')} className="flex flex-col gap-1">
+        <nav aria-label={t('nav.main')} className="flex flex-col gap-2">
           {nav.map((item) => {
             const active = isActive(pathname, item)
             return (
@@ -52,19 +54,19 @@ export function ShellFrame({ nav, area, actions, children }: ShellFrameProps) {
                 to={item.to as '/'}
                 aria-current={active ? 'page' : undefined}
                 className={cn(
-                  'relative flex h-11 items-center gap-3 rounded-sm px-3 text-body-s font-medium transition-colors duration-100 ease-out active:scale-[.985]',
-                  active ? 'text-ink-1' : 'text-ink-2 hover:text-ink-1',
+                  'relative flex h-11 items-center gap-3 rounded-sm px-3 text-body font-medium transition-colors duration-100 ease-out active:scale-[.985]',
+                  active ? 'text-ink-1' : 'text-ink-2 hover:bg-hover hover:text-ink-1',
                 )}
               >
                 {active && (
                   <motion.span
                     layoutId={indicatorId}
                     transition={reduced ? { duration: 0 } : spring.default}
-                    className="absolute inset-0 rounded-sm border border-line bg-surface"
+                    className="absolute inset-0 rounded-sm bg-raised"
                   />
                 )}
                 <item.icon
-                  className={cn('relative', active && 'text-primary-hover')}
+                  className="relative"
                   size={NAV_ICON_SIZE}
                   strokeWidth={NAV_ICON_STROKE}
                   aria-hidden="true"
@@ -76,10 +78,10 @@ export function ShellFrame({ nav, area, actions, children }: ShellFrameProps) {
         </nav>
       </aside>
 
-      <div className="flex min-w-0 flex-col">
-        <header className="mq-translucent sticky top-0 z-30 flex h-[var(--mq-shell-nav)] items-center gap-3 px-4 sm:px-6">
+      <div className="flex min-h-dvh min-w-0 flex-col bg-ground lg:m-2 lg:ml-0 lg:min-h-0 lg:overflow-hidden lg:rounded-xl lg:border lg:border-line">
+        <header className="sticky top-0 z-30 flex h-[var(--mq-header)] shrink-0 items-center gap-3 border-b border-line bg-ground px-4 sm:px-6">
           <Link to="/" aria-label={t('brand.name')} className="grid size-11 place-items-center lg:hidden">
-            <LogoMark className="size-9" />
+            <LogoMark className="size-8" />
           </Link>
           <div className="min-w-0 flex-1">
             <Breadcrumbs />
@@ -87,7 +89,9 @@ export function ShellFrame({ nav, area, actions, children }: ShellFrameProps) {
           {actions}
           <LocaleToggle />
         </header>
-        <div className="flex-1 pb-24 lg:pb-0">{children}</div>
+        <div ref={scroller} className="flex-1 pb-24 lg:overflow-y-auto lg:pb-0">
+          {children}
+        </div>
       </div>
 
       <nav
@@ -104,7 +108,7 @@ export function ShellFrame({ nav, area, actions, children }: ShellFrameProps) {
               aria-current={active ? 'page' : undefined}
               className={cn(
                 'flex min-h-14 flex-col items-center justify-center gap-0.5 text-label font-medium transition-colors duration-100 active:scale-[.97]',
-                active ? 'text-primary-hover' : 'text-ink-muted',
+                active ? 'text-ink-1' : 'text-ink-2',
               )}
             >
               <item.icon size={NAV_ICON_SIZE} strokeWidth={active ? 2.25 : NAV_ICON_STROKE} aria-hidden="true" />

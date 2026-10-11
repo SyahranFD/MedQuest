@@ -26,6 +26,9 @@ describe('filterRows', () => {
   it('filters by mode, case and rating', () => {
     expect(filterRows(rows, { ...defaultFilters, mode: 'poli' }).every((r) => r.mode === 'poli')).toBe(true)
     expect(filterRows(rows, { ...defaultFilters, caseId: 'poli-dm2' })).toHaveLength(1)
+    const t = rows[0]!.evaluation.caseTitle
+    expect(filterRows(rows, { ...defaultFilters, query: `  ${t.toUpperCase()} ` }).every((r) => r.evaluation.caseTitle === t)).toBe(true)
+    expect(filterRows(rows, { ...defaultFilters, query: 'zzzz-tidak-ada' })).toHaveLength(0)
     const passed = filterRows(rows, { ...defaultFilters, rating: 'passed' })
     const retry = filterRows(rows, { ...defaultFilters, rating: 'retry' })
     expect(passed.length + retry.length).toBe(rows.length)

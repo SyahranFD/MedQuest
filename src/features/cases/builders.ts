@@ -196,11 +196,11 @@ export function communicationCriteria(): Criterion[] {
       {
         met: 'Anda menyapa dan memperkenalkan diri.',
         partial: 'Anda menyapa atau memperkenalkan diri, tetapi tidak keduanya.',
-        missed: 'Tidak ada sapaan dan perkenalan diri pada percakapan.',
+        missed: 'Anda tidak menyapa dan memperkenalkan diri.',
       },
       {
         partial: { kind: 'any', of: [{ kind: 'intent', intent: 'greet' }, { kind: 'intent', intent: 'intro' }] },
-        improve: 'Mulailah dengan menyapa dan menyebutkan nama serta peran Anda.',
+        improve: 'Mulailah dengan menyapa, lalu sebutkan nama dan peran Anda.',
         highlight: 'Pembukaan konsultasi yang sopan dan jelas.',
       },
     ),
@@ -212,11 +212,11 @@ export function communicationCriteria(): Criterion[] {
       { kind: 'intent', intent: 'consent' },
       {
         met: 'Anda meminta izin pasien sebelum pemeriksaan.',
-        missed: 'Tidak terdeteksi permintaan izin sebelum memeriksa.',
+        missed: 'Anda tidak meminta izin sebelum memeriksa.',
       },
       {
-        improve: 'Mintalah izin dan jelaskan singkat apa yang akan diperiksa sebelum menyentuh pasien.',
-        highlight: 'Anda menghormati otonomi pasien dengan meminta izin.',
+        improve: 'Minta izin dan jelaskan singkat apa yang akan diperiksa sebelum menyentuh pasien.',
+        highlight: 'Anda menghormati hak pasien dengan meminta izin.',
       },
     ),
     crit(
@@ -226,9 +226,9 @@ export function communicationCriteria(): Criterion[] {
       'Respons empatik',
       { kind: 'intent', intent: 'empathy' },
       {
-        met: 'Anda menyatakan empati secara eksplisit.',
-        partial: 'Anda menenangkan pasien, tetapi tidak menyebut perasaannya secara eksplisit.',
-        missed: 'Tidak terdeteksi kalimat empati.',
+        met: 'Anda menyampaikan empati dengan jelas.',
+        partial: 'Anda menenangkan pasien, tetapi tidak menyebut perasaannya.',
+        missed: 'Anda tidak menyampaikan empati.',
       },
       {
         partial: { kind: 'intent', intent: 'reassure' },
@@ -243,17 +243,17 @@ export function communicationCriteria(): Criterion[] {
       'Menggali ide, kekhawatiran, dan harapan pasien',
       { kind: 'asked', anyOf: ICE_IDS, min: 2 },
       {
-        met: 'Anda menggali sudut pandang pasien (ide, kekhawatiran, harapan).',
-        partial: 'Anda menggali sebagian sudut pandang pasien, atau hanya mencentang pada daftar akhir.',
-        missed: 'Sudut pandang pasien tidak digali.',
+        met: 'Anda menanyakan sudut pandang pasien (ide, kekhawatiran, harapan).',
+        partial: 'Anda baru menanyakan sebagian sudut pandang pasien, atau hanya mencentangnya di daftar akhir.',
+        missed: 'Anda tidak menanyakan sudut pandang pasien.',
       },
       {
         partial: {
           kind: 'any',
           of: [{ kind: 'asked', anyOf: ICE_IDS, min: 1 }, { kind: 'checklist', key: 'ice' }],
         },
-        improve: 'Tanyakan apa yang pasien pikirkan, khawatirkan, dan harapkan sebelum menjelaskan rencana.',
-        highlight: 'Anda menggali kekhawatiran dan harapan pasien.',
+        improve: 'Tanyakan apa yang dipikirkan, dikhawatirkan, dan diharapkan pasien sebelum menjelaskan rencana.',
+        highlight: 'Anda menanyakan kekhawatiran dan harapan pasien.',
       },
     ),
     crit(
@@ -264,12 +264,12 @@ export function communicationCriteria(): Criterion[] {
       { kind: 'intent', intent: 'summary' },
       {
         met: 'Anda merangkum cerita pasien.',
-        partial: 'Anda mencentang rangkuman pada daftar akhir, tetapi tidak terdeteksi pada percakapan.',
-        missed: 'Tidak ada rangkuman cerita pasien.',
+        partial: 'Anda mencentang rangkuman di daftar akhir, tetapi tidak ada rangkuman di percakapan.',
+        missed: 'Anda tidak merangkum cerita pasien.',
       },
       {
         partial: { kind: 'checklist', key: 'sum' },
-        improve: 'Ringkas kembali keluhan pasien sebelum menutup anamnesis.',
+        improve: 'Rangkum kembali keluhan pasien sebelum menutup anamnesis.',
         highlight: 'Rangkuman Anda memastikan cerita pasien dipahami dengan benar.',
       },
     ),
@@ -288,11 +288,11 @@ export function communicationCriteria(): Criterion[] {
       {
         met: 'Nada Anda menghargai pasien.',
         partial: 'Anda tidak menghakimi, tetapi beberapa kali menyela pasien.',
-        missed: 'Terdeteksi kalimat menghakimi atau terlalu sering menyela.',
+        missed: 'Ada kalimat yang menghakimi, atau Anda terlalu sering menyela.',
       },
       {
         partial: { kind: 'toneCount', tone: 'menghakimi', max: 0 },
-        improve: 'Biarkan pasien selesai bicara dan hindari kalimat menyalahkan.',
+        improve: 'Biarkan pasien selesai bicara dan hindari kalimat yang menyalahkan.',
         highlight: 'Anda menjaga nada yang menghargai pasien.',
       },
     ),
@@ -309,8 +309,8 @@ export function safetyNetCriterion(weight: 1 | 2, ref?: string): Criterion {
     { kind: 'intent', intent: 'safety-net' },
     {
       met: 'Anda menjelaskan tanda bahaya dan kapan harus kembali.',
-      partial: 'Anda mencentang safety-netting pada daftar akhir, tetapi tidak terdeteksi pada percakapan.',
-      missed: 'Tidak ada penjelasan tanda bahaya dan kapan harus kembali.',
+      partial: 'Anda mencentang edukasi tanda bahaya di daftar akhir, tetapi tidak menyampaikannya di percakapan.',
+      missed: 'Anda tidak menjelaskan tanda bahaya dan kapan harus kembali.',
     },
     {
       partial: { kind: 'checklist', key: 'safe' },

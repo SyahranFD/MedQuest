@@ -25,7 +25,9 @@ async function renderHistory() {
 }
 
 const rowCount = () => screen.queryAllByRole('button', { name: /^Buka rincian/ }).length
-const demoRows = createDemoRecords().flatMap((r) => r.evaluations).length
+const demoEvals = createDemoRecords().flatMap((r) => r.evaluations)
+const demoRows = demoEvals.length
+const poliRows = createDemoRecords().filter((r) => r.mode === 'poli').flatMap((r) => r.evaluations).length
 
 beforeEach(() => {
   useUiStore.setState({ locale: 'id', reducedMotion: 'reduce' })
@@ -37,7 +39,7 @@ describe('/app/riwayat', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Riwayat' })).toBeInTheDocument()
     expect(screen.getAllByRole('main')).toHaveLength(1)
     await waitFor(() => expect(rowCount()).toBe(demoRows))
-    expect(screen.getByRole('heading', { level: 2, name: 'Rerata per dimensi' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 2, name: 'Rata-rata per dimensi' })).toBeInTheDocument()
     expect(screen.getAllByRole('meter')).toHaveLength(6)
   })
 
@@ -45,13 +47,28 @@ describe('/app/riwayat', () => {
     await renderHistory()
     await waitFor(() => expect(rowCount()).toBe(demoRows))
     const user = userEvent.setup({ delay: null })
-    await user.click(screen.getByRole('button', { name: 'Poliklinik' }))
-    expect(rowCount()).toBe(3)
-    await user.click(screen.getByRole('button', { name: 'Perlu diulang' }))
-    expect(rowCount()).toBeLessThan(3)
-    await user.click(screen.getByRole('button', { name: 'ER' }))
-    await user.click(screen.getByRole('button', { name: 'Lulus atau lebih' }))
+    await user.click(screen.getByRole('tab', { name: 'Poliklinik' }))
+    expect(rowCount()).toBe(poliRows)
+    await user.click(screen.getByRole('tab', { name: 'Perlu diulang' }))
+    expect(rowCount()).toBeLessThan(poliRows)
+    await user.click(screen.getByRole('tab', { name: 'IGD' }))
+    await user.click(screen.getByRole('tab', { name: 'Lulus atau lebih' }))
     expect(rowCount()).toBeGreaterThan(0)
+  })
+
+  it('searches case titles and clears the filters from the empty state', async () => {
+    await renderHistory()
+    await waitFor(() => expect(rowCount()).toBe(demoRows))
+    const user = userEvent.setup({ delay: null })
+    const title = screen.getAllByRole('button', { name: /^Buka rincian/ })[0]!.getAttribute('aria-label')!.replace('Buka rincian ', '')
+    await user.type(screen.getByRole('searchbox', { name: 'Cari kasus' }), title.toUpperCase())
+    expect(rowCount()).toBeGreaterThan(0)
+    expect(screen.getAllByRole('button', { name: /^Buka rincian/ }).every((b) => b.getAttribute('aria-label') === `Buka rincian ${title}`)).toBe(true)
+    await user.clear(screen.getByRole('searchbox', { name: 'Cari kasus' }))
+    await user.type(screen.getByRole('searchbox', { name: 'Cari kasus' }), 'zzzz-tidak-ada')
+    expect(await screen.findByText('Tidak ada hasil yang cocok')).toBeInTheDocument()
+    await user.click(screen.getAllByRole('button', { name: 'Hapus filter' }).at(-1)!)
+    await waitFor(() => expect(rowCount()).toBe(demoRows))
   })
 
   it('opens a detail dialog with a debrief link', async () => {

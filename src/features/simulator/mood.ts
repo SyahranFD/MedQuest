@@ -3,14 +3,14 @@ import type { Tone } from '@/features/cases/types'
 
 /** Solid badge and bar classes per mood, from tokens only (CLAUDE.md 8.1: solid fills, never tonal). */
 export const MOOD_STYLE: Record<Emotion, { badge: string; bar: string }> = {
-  netral: { badge: 'bg-neutral text-neutral-ink', bar: 'bg-neutral' },
-  cemas: { badge: 'bg-warning text-warning-ink', bar: 'bg-warning' },
-  sakit: { badge: 'bg-cat-cardio-fill text-primary-ink', bar: 'bg-cat-cardio-fill' },
-  sedih: { badge: 'bg-cat-infection-fill text-primary-ink', bar: 'bg-cat-infection-fill' },
-  marah: { badge: 'bg-danger text-danger-ink', bar: 'bg-danger' },
-  bingung: { badge: 'bg-cat-neuro-fill text-primary-ink', bar: 'bg-cat-neuro-fill' },
-  lega: { badge: 'bg-cat-pulmo-fill text-primary-ink', bar: 'bg-cat-pulmo-fill' },
-  senang: { badge: 'bg-success text-success-ink', bar: 'bg-success' },
+  netral: { badge: 'bg-chip-neutral text-chip-neutral-ink', bar: 'bg-neutral' },
+  cemas: { badge: 'bg-chip-warning text-chip-warning-ink', bar: 'bg-warning' },
+  sakit: { badge: 'bg-chip-cardio text-ink-1', bar: 'bg-cat-cardio-fill' },
+  sedih: { badge: 'bg-chip-infection text-ink-1', bar: 'bg-cat-infection-fill' },
+  marah: { badge: 'bg-chip-danger text-chip-danger-ink', bar: 'bg-danger' },
+  bingung: { badge: 'bg-chip-neuro text-ink-1', bar: 'bg-cat-neuro-fill' },
+  lega: { badge: 'bg-chip-pulmo text-ink-1', bar: 'bg-cat-pulmo-fill' },
+  senang: { badge: 'bg-chip-success text-chip-success-ink', bar: 'bg-success' },
 }
 
 export const TONE_BADGE: Record<Tone, 'success' | 'neutral' | 'warning' | 'danger'> = {

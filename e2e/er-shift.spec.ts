@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { seed, watch } from './helpers'
+import { closeTablet, openTablet, seed, watch } from './helpers'
 
 test('ER shift basics: beds, select, order, clock speed, end', async ({ page }) => {
   await seed(page)
   const w = watch(page)
 
   await page.goto('/app/kasus')
-  await page.getByRole('button', { name: 'ER', exact: true }).click()
+  await page.getByRole('tab', { name: 'IGD', exact: true }).click()
   await page.getByRole('link', { name: /Nyeri dada dengan elevasi ST/ }).click()
   await expect(page.getByText('Cara kerja shift IGD')).toBeVisible()
   await page.getByRole('button', { name: 'Mulai shift IGD' }).click()
@@ -23,20 +23,26 @@ test('ER shift basics: beds, select, order, clock speed, end', async ({ page }) 
   // select a patient
   const bed = strip.getByRole('button').first()
   await bed.click()
+
+  // pressing an unbedded patient opens the placement view; a bed opens Periksa, triage lives in Diagnosis
+  await expect(page.getByRole('dialog', { name: 'Tablet dokter' })).toBeVisible()
+  await expect(page.getByRole('tablist')).toHaveCount(0)
+  await page.getByRole('button', { name: /^Bed 1/ }).click()
+  await expect(page.getByRole('tab', { name: 'Periksa' })).toHaveAttribute('aria-selected', 'true')
+  await page.getByRole('tab', { name: 'Diagnosis' }).click()
+  await page.getByRole('group', { name: 'Zona triase' }).getByRole('button', { name: 'Merah' }).click()
+  await closeTablet(page)
+  await expect(bed).toContainText('Bed 1')
   await expect(bed).toHaveAttribute('aria-pressed', 'true')
 
-  // place in a bed and triage
-  await page.getByRole('button', { name: 'Bed 1', exact: true }).click()
-  await page.getByRole('group', { name: 'Zona triase' }).getByRole('button', { name: 'Merah' }).click()
-  await expect(bed).toContainText('Bed 1')
-
   // order a test
-  await page.getByRole('tab', { name: 'Lab' }).click()
+  await openTablet(page, 'Lab')
   const order = page.getByRole('tabpanel').locator('section ul button:not([disabled])').first()
   await order.click()
   await expect(page.getByRole('tabpanel').getByText('Dipesan').first()).toBeVisible()
 
   // clock speed
+  await closeTablet(page)
   const speed = page.getByRole('group', { name: 'Kecepatan jam' })
   await speed.getByRole('button', { name: '4x' }).click()
   await expect(speed.getByRole('button', { name: '4x' })).toHaveAttribute('aria-pressed', 'true')

@@ -11,13 +11,13 @@ export function formatShortDate(iso: string, locale: Locale) {
   return new Intl.DateTimeFormat(dateLocale(locale), { day: 'numeric', month: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(iso))
 }
 
-export type BadgeVariant = 'danger' | 'warning' | 'success' | 'neutral'
+export type BadgeVariant = 'danger' | 'warning' | 'success' | 'neutral' | 'info'
 
-/** Rating badge colour: success for good and above, neutral for pass, warning and danger below. */
+/** Rating badge colour: success for good and above, info for pass, warning and danger below. */
 export const BAND_VARIANT: Record<Band, BadgeVariant> = {
   excellent: 'success',
   good: 'success',
-  pass: 'neutral',
+  pass: 'info',
   borderline: 'warning',
   'clear-fail': 'danger',
 }
@@ -35,6 +35,17 @@ const TOPIC_CATEGORY: Record<string, BadgeCategory> = {
   acs: 'cardio',
   hypertension: 'cardio',
   diabetes: 'endocrine',
+  stroke: 'neuro',
+  sepsis: 'infection',
+  pneumonia: 'pulmo',
+  copd: 'pulmo',
+  anaphylaxis: 'pulmo',
+  ugib: 'infection',
+  typhoid: 'infection',
+  asthma: 'pulmo',
+  uti: 'infection',
+  'pregnancy-htn': 'cardio',
+  leprosy: 'infection',
 }
 
 /** Specialty badge hue, derived from the case's first registry guideline topic. */

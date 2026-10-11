@@ -21,7 +21,7 @@ interface LegalPageProps {
 export function LegalPage({ title, updated, intro, sections }: LegalPageProps) {
   const t = useT()
   return (
-    <PageBody>
+    <PageBody wide>
       <PageHeader title={title} description={intro} eyebrow={<p className="text-body-s text-ink-muted">{t('legal.updated', { date: updated })}</p>} />
       <div className="grid gap-10 pt-6 lg:grid-cols-[14rem_1fr]">
         <nav aria-label={t('legal.onThisPage')} className="hidden lg:block">

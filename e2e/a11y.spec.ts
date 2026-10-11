@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { seed, startEr, startPoli } from './helpers'
+import { closeTablet, openTablet, seed, startEr, startPoli } from './helpers'
 
 const ROUTES = ['/', '/app', '/app/kasus', '/app/riwayat', '/dosen', '/dosen/mahasiswa', '/dosen/mahasiswa/s01', '/dosen/perpustakaan', '/syarat', '/privasi', '/tidak-ada']
 
@@ -45,11 +45,14 @@ test.describe('axe states', () => {
   test('poli session: every tab, end dialog, debrief', async ({ page }) => {
     await seed(page, { reducedMotion: 'reduce' })
     await startPoli(page)
+    await expectNoViolations(page, 'session closed')
+    await openTablet(page)
     await expectNoViolations(page, 'session anamnesis')
     for (const tab of ['Periksa', 'Lab', 'Diagnosis', 'Terapi']) {
       await page.getByRole('tab', { name: tab }).click()
       await expectNoViolations(page, `session ${tab}`)
     }
+    await closeTablet(page)
     const end = page.getByTestId('end-session')
     await end.click()
     await expect(page.getByRole('dialog')).toBeVisible()

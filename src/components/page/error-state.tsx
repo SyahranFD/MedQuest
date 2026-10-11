@@ -23,17 +23,17 @@ export function ErrorState({ kind = 'error', title, description, onRetry, classN
       role="alert"
       data-slot="error-state"
       className={cn(
-        'flex flex-col items-center gap-3 rounded-md border border-line bg-surface px-6 py-12 text-center',
+        'flex flex-col items-center gap-3 rounded-card border border-line bg-raised px-6 py-12 text-center',
         className,
       )}
     >
-      <span className="grid size-12 place-items-center rounded-md bg-danger text-danger-ink">
-        <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
+      <span className="grid size-10 place-items-center rounded-row bg-danger text-danger-ink">
+        <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
       </span>
-      <h2 className="font-display text-heading-card font-semibold text-ink-1">
+      <h2 className="font-display text-section font-semibold text-ink-1">
         {title ?? t(kind === 'offline' ? 'state.offline.title' : 'state.error.title')}
       </h2>
-      <p className="max-w-sm text-body-s text-ink-2">
+      <p className="max-w-sm text-body-s text-ink-3">
         {description ?? t(kind === 'offline' ? 'state.offline.body' : 'state.error.body')}
       </p>
       {onRetry && (

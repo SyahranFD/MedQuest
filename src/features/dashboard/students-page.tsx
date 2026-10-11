@@ -6,11 +6,10 @@ import { PageBody } from '@/components/page/page-body'
 import { PageHeader } from '@/components/page/page-header'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePageTitle } from '@/lib/use-page-title'
-import { cn } from '@/lib/utils'
 import { SampleBadge } from './components/badges'
 import { StudentTable } from './components/student-table'
 import {
@@ -33,12 +32,16 @@ const PROGRESS: readonly ProgressBand[] = ['all', 'low', 'mid', 'done']
 
 function TableSkeleton() {
   return (
-    <div aria-hidden="true" className="flex flex-col gap-px overflow-hidden rounded-md border border-line bg-line">
+    <div aria-hidden="true" className="flex flex-col">
       {Array.from({ length: 8 }, (_, i) => (
-        <div key={i} className="flex items-center gap-4 bg-surface px-4 py-3">
-          <Skeleton className="size-10 shrink-0 rounded-full" />
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="ml-auto h-4 w-24" />
+        <div key={i} className="flex h-14 items-center gap-3 px-3">
+          <Skeleton className="size-8 shrink-0 rounded-full" />
+          <div className="flex w-56 flex-col gap-1">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3.5 w-20" />
+          </div>
+          <Skeleton className="ml-4 h-4 w-24" />
+          <Skeleton className="ml-auto h-4 w-10" />
         </div>
       ))}
     </div>
@@ -62,66 +65,60 @@ export function StudentsPage() {
   const reset = () => setState((s) => ({ ...initialTableState, sortKey: s.sortKey, sortDir: s.sortDir }))
 
   return (
-    <PageBody wide className="flex flex-col gap-5">
-      <PageHeader eyebrow={<SampleBadge />} title={dt('students.title')} description={dt('students.desc', { n: data?.length ?? 36 })} className="pb-0" />
+    <PageBody wide className="flex flex-col gap-4">
+      <PageHeader
+        title={dt('students.title')}
+        description={
+          <>
+            {dt('students.desc', { n: data?.length ?? 36 })}
+            <SampleBadge />
+          </>
+        }
+        className="pb-0"
+        toolbar={
+          <>
+            <div className="relative w-full sm:w-72">
+              <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-3" />
+              <Input
+                id={`${uid}-q`}
+                type="search"
+                aria-label={dt('students.search')}
+                value={state.query}
+                placeholder={dt('students.search')}
+                onChange={(e) => patch({ query: e.target.value })}
+                className="pl-9"
+              />
+            </div>
+            <Select value={state.progress} onValueChange={(v) => patch({ progress: v as ProgressBand })}>
+              <SelectTrigger aria-label={dt('students.filter.progress')} className="w-full sm:w-52">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {PROGRESS.map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {dt(`students.progress.${p}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {dirty && (
+              <Button variant="ghost" onClick={reset}>
+                {dt('students.reset')}
+              </Button>
+            )}
+          </>
+        }
+      />
 
-      <div className="flex flex-col gap-4 rounded-md border border-line bg-surface p-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:min-w-64">
-          <Label htmlFor={`${uid}-q`}>{dt('students.search')}</Label>
-          <div className="relative">
-            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-ink-muted" />
-            <Input
-              id={`${uid}-q`}
-              type="search"
-              value={state.query}
-              placeholder={dt('students.search.placeholder')}
-              onChange={(e) => patch({ query: e.target.value })}
-              className="pl-9"
-            />
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span id={`${uid}-s`} className="text-body-s font-medium text-ink-1">
-            {dt('students.filter.status')}
-          </span>
-          <div role="group" aria-labelledby={`${uid}-s`} className="flex flex-wrap gap-2">
-            {STATUSES.map((s) => (
-              <button
-                key={s}
-                type="button"
-                aria-pressed={state.status === s}
-                onClick={() => patch({ status: s })}
-                className={cn(
-                  'inline-flex h-11 items-center rounded-full border px-3.5 text-body-s font-medium transition-[background-color,color,border-color,transform] duration-100 ease-out active:scale-[.985] sm:h-9',
-                  state.status === s ? 'border-ink-1 bg-ink-1 text-surface' : 'border-line-strong text-ink-1 hover:bg-panel',
-                )}
-              >
-                {s === 'all' ? dt('students.status.all') : dt(`status.${s}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5 sm:w-52">
-          <Label htmlFor={`${uid}-p`}>{dt('students.filter.progress')}</Label>
-          <Select value={state.progress} onValueChange={(v) => patch({ progress: v as ProgressBand })}>
-            <SelectTrigger id={`${uid}-p`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PROGRESS.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {dt(`students.progress.${p}`)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        {dirty && (
-          <Button variant="ghost" onClick={reset}>
-            {dt('students.reset')}
-          </Button>
-        )}
-      </div>
+      <Tabs variant="underline" value={state.status} onValueChange={(v) => patch({ status: v as StudentStatus | 'all' })}>
+        <TabsList aria-label={dt('students.filter.status')}>
+          {STATUSES.map((s) => (
+            <TabsTrigger key={s} value={s}>
+              {s === 'all' ? dt('students.status.all') : dt(`status.${s}`)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {isPending && <TableSkeleton />}
       {isError && <ErrorState title={dt('loadError')} description={dt('loadErrorBody')} onRetry={() => void refetch()} />}
@@ -140,7 +137,7 @@ export function StudentsPage() {
       {data && filtered.length > 0 && (
         <>
           <StudentTable rows={rows} sortKey={state.sortKey} sortDir={state.sortDir} onSort={(key) => setState((s) => ({ ...s, ...nextSort(s, key), page: 1 }))} />
-          <div className="flex flex-wrap items-center justify-between gap-3 text-body-s text-ink-2">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-meta text-ink-3">
             <p aria-live="polite">{dt('students.range', { from: (page - 1) * PAGE_SIZE + 1, to: (page - 1) * PAGE_SIZE + rows.length, total: filtered.length })}</p>
             {pages > 1 && (
               <nav aria-label={dt('students.page', { page, pages })} className="flex items-center gap-2">

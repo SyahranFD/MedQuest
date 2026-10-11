@@ -20,36 +20,36 @@ export function GradingSequence({ onDone }: { onDone: () => void }) {
   }, [step, onDone])
 
   return (
-    <section aria-label={st('grading.title')} className="mx-auto flex max-w-md flex-col gap-5 rounded-lg border border-line bg-surface p-6" data-testid="grading-sequence">
+    <section aria-label={st('grading.title')} className="flex flex-col gap-6 border-t border-line pt-8" data-testid="grading-sequence">
       <div className="flex flex-col gap-1">
-        <h2 className="font-display text-heading-card font-semibold text-ink-1">{st('grading.title')}</h2>
-        <p className="text-body-s text-ink-2">{st('grading.body')}</p>
+        <h2 className="font-display text-section font-semibold text-ink-1">{st('grading.title')}</h2>
+        <p className="text-body-s text-ink-3">{st('grading.body')}</p>
       </div>
-      <ol className="flex flex-col gap-2.5" aria-live="polite">
+      <ol className="flex flex-col gap-3" aria-live="polite">
         {STEPS.map((s, i) => {
           const done = i < step
           const active = i === step
           return (
             <li key={s} className="flex items-center gap-3 text-body-s" aria-current={active ? 'step' : undefined}>
-              <span className="grid size-6 shrink-0 place-items-center rounded-full border border-line-strong">
+              <span className="grid size-5 shrink-0 place-items-center">
                 {done ? (
-                  <Check className="size-3.5 text-ink-1" aria-hidden="true" />
+                  <Check className="size-4 text-success" strokeWidth={1.75} aria-hidden="true" />
                 ) : active ? (
-                  <LoaderCircle className={reduced ? 'size-3.5' : 'size-3.5 animate-spin'} aria-hidden="true" />
+                  <LoaderCircle className={reduced ? 'size-4' : 'size-4 animate-spin'} strokeWidth={1.5} aria-hidden="true" />
                 ) : null}
               </span>
-              <span className={done ? 'text-ink-muted' : active ? 'font-medium text-ink-1' : 'text-ink-4'}>{st(`grading.step.${s}`)}</span>
+              <span className={`transition-colors duration-200 motion-reduce:transition-none ${active ? 'font-medium text-ink-1' : 'text-ink-3'}`}>{st(`grading.step.${s}`)}</span>
             </li>
           )
         })}
       </ol>
-      <div className="h-1 overflow-hidden rounded-full bg-inset" aria-hidden="true">
+      <div className="h-0.5 overflow-hidden rounded-full bg-inset" aria-hidden="true">
         <div
-          className="h-full origin-left bg-primary transition-transform duration-700 ease-[var(--mq-ease-out)] motion-reduce:transition-none"
+          className="h-full origin-left bg-ink-1 transition-transform duration-700 ease-[var(--mq-ease-out)] motion-reduce:transition-none"
           style={{ transform: `scaleX(${Math.min(step, STEPS.length) / STEPS.length})` }}
         />
       </div>
-      <Button variant="secondary" onClick={onDone} className="self-end" autoFocus>
+      <Button variant="secondary" onClick={onDone} className="self-start" autoFocus>
         {st('grading.skip')}
       </Button>
     </section>

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { ALL_CASES } from '@/features/cases/data'
 import { filterStudents, nextSort, PAGE_SIZE, pageCount, paginate, sortStudents } from './student-table'
 import type { StudentSummary } from './types'
 
@@ -9,7 +10,7 @@ const base: StudentSummary = {
   nim: 'N',
   attemptCount: 3,
   casesCompleted: 3,
-  casesTotal: 6,
+  casesTotal: ALL_CASES.length,
   progress: 50,
   averagePercent: 70,
   recentPercent: 70,

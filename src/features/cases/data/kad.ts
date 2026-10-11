@@ -1,0 +1,298 @@
+// Kasus 6 (IGD): ketoasidosis diabetik pada diabetes tipe 1 yang kehabisan insulin. SINTETIS.
+// Konsultan medis harus memvalidasi protokol cairan, ambang kalium, dosis insulin, dan alur sebelum dipakai di luar simulasi.
+
+import { buildRubric, crit, defaultFallbacks, exam, iceEntries, makeTests, P, pickDispositions, pickTreatments, q, safetyNetCriterion, vitals } from '../builders'
+import type { Case } from '../types'
+
+const MODE = 'er' as const
+
+export const kadCase: Case = {
+  id: 'er-kad',
+  mode: MODE,
+  specialty: 'Penyakit Dalam / Endokrin / IGD',
+  difficulty: 'sedang',
+  synthetic: true,
+  severity: 'critical',
+  title: 'Ketoasidosis diabetik',
+  patient: { name: 'Dinda Maharani', age: 19, gender: 'F', occupation: 'Mahasiswi' },
+  arrivalBlurb: 'Perempuan 19 tahun dengan diabetes tipe 1, mual muntah 2 hari, napas cepat dan dalam, nyeri perut, insulin habis 3 hari.',
+  chiefComplaint: 'Saya mual dan muntah terus, Dok, napas saya cepat, perut sakit, dan lemas sekali.',
+  vitals: vitals(118, '96/58', 30, 98, 37.9, 14),
+  initialTrust: 54,
+  greeting: 'Dok... saya lemas banget, napas saya cepat...',
+  farewell: 'Terima kasih, Dok.',
+  fallbacks: defaultFallbacks({
+    unclear: [
+      'Maaf Dok, saya pusing, bisa diulang pelan-pelan?',
+      'Apa tadi Dok? Saya kurang fokus.',
+      'Maksudnya gimana, Dok?',
+    ],
+    empathyReply: 'Iya, Dok... saya takut banget. Makasih sudah mau dengerin.',
+  }),
+  dialogue: [
+    q('keluhan-utama', 'rps', 'Keluhan utama Mbak apa?', 'Mual muntah terus dua hari ini, Dok. Perut sakit, lemas, dan napas saya cepat sekali.', ['keluhan utama', 'apa keluhan', 'keluhan apa', 'ada keluhan', 'cerita keluhan', 'mengapa datang']),
+    q('onset', 'rps', 'Sejak kapan keluhan ini mulai terasa?', 'Tiga hari lalu mulai haus dan sering kencing, Dok. Dua hari ini muntah-muntah.', ['sejak kapan', 'kapan mulai', 'sudah berapa lama', 'berapa hari', 'mulai terasa']),
+    q('haus-kencing', 'rps', 'Apakah Mbak sering haus dan buang air kecil lebih banyak dari biasanya?', 'Iya, Dok, minum banyak tapi tetap haus. Kencing juga sering sekali, malam sampai lima kali.', ['haus', 'sering kencing', 'kencing banyak', 'banyak minum', 'poliuri']),
+    q('muntah', 'rps', 'Seberapa sering muntahnya, apakah masih bisa minum?', 'Hampir tiap makan atau minum langsung keluar, Dok. Sudah sepuluh kali lebih hari ini.', ['muntah', 'seberapa sering muntah', 'bisa minum', 'mual', 'asupan']),
+    q('nyeri-perut', 'rps', 'Apakah ada nyeri perut? Di bagian mana?', 'Seluruh perut sakit pegal, Dok, terutama ulu hati. Tidak tajam.', ['nyeri perut', 'perut sakit', 'sakit perut', 'perut', 'ulu hati']),
+    q('napas', 'rps', 'Apakah napasnya terasa cepat dan dalam, atau ada bau napas seperti buah?', 'Napas saya cepat dan dalam sendiri, Dok. Kata teman, napas saya bau seperti buah busuk.', ['napas cepat', 'napas dalam', 'bau napas', 'bau buah', 'sesak', 'napas'], { red: true }),
+    q('kesadaran', 'rps', 'Apakah Mbak merasa sangat mengantuk, bingung, atau hampir pingsan?', 'Ngantuk banget, Dok, dan beberapa kali hampir pingsan waktu berdiri.', ['mengantuk', 'bingung', 'pingsan', 'kesadaran', 'pusing'], { red: true }),
+    q('berat-badan', 'rps', 'Apakah berat badan turun belakangan ini?', 'Turun sekitar tiga kilo dalam seminggu, Dok.', ['berat badan', 'badan kurus', 'turun berat', 'bb turun']),
+    q('insulin-terakhir', 'obat', 'Kapan terakhir kali Mbak menyuntik insulin?', 'Tiga hari lalu, Dok, habis. Saya belum sempat beli lagi.', ['terakhir suntik insulin', 'suntik insulin', 'kapan insulin', 'habis insulin', 'terakhir insulin'], { red: true }),
+    q('alasan-insulin', 'obat', 'Kenapa insulinnya sampai tidak disuntik tiga hari?', 'Uang kiriman telat, Dok, dan saya malu minta ke teman kos. Takutnya juga dibilang merepotkan.', ['mengapa insulin tidak', 'alasan insulin', 'tidak disuntik', 'berhenti insulin', 'putus obat'], { gate: [58, 'Lupa saja, Dok.'] }),
+    q('obat-rutin', 'obat', 'Insulin jenis apa dan dosisnya berapa yang biasa Mbak pakai?', 'Glargin malam hari dua puluh unit, dan aspart sebelum makan, Dok.', ['jenis insulin', 'dosis insulin', 'obat rutin', 'minum obat apa', 'obat apa', 'konsumsi obat']),
+    q('demam-infeksi', 'rps', 'Apakah ada demam, batuk, atau nyeri saat kencing minggu ini?', 'Agak demam dua hari, Dok. Kencing juga perih sejak seminggu lalu.', ['demam', 'batuk', 'nyeri kencing', 'kencing perih', 'infeksi', 'anyang anyangan']),
+    q('riwayat-dm', 'rpd', 'Sejak kapan Mbak didiagnosis diabetes dan kapan terakhir kontrol?', 'Sejak SMP, Dok, umur dua belas. Kontrol terakhir enam bulan lalu.', ['didiagnosis diabetes', 'riwayat diabetes', 'sejak kapan diabetes', 'kontrol', 'terakhir kontrol']),
+    q('riwayat-kad', 'rpd', 'Apakah Mbak pernah dirawat karena gula darah sangat tinggi atau asam darah?', 'Pernah dua kali waktu SMA, Dok, dirawat di ICU sehari.', ['pernah dirawat', 'ketoasidosis', 'kad', 'asam darah', 'dirawat icu']),
+    q('hipoglikemia', 'rpd', 'Apakah Mbak sering mengalami gula rendah, misalnya gemetar atau keringat dingin?', 'Pernah, Dok, tapi sudah lama.', ['gula rendah', 'hipoglikemia', 'gemetar', 'keringat dingin']),
+    q('makan', 'sosial', 'Bagaimana pola makan Mbak belakangan ini?', 'Makan seadanya karena uang tipis, Dok. Sering mi instan dan minuman manis.', ['pola makan', 'makan', 'diet', 'makanan', 'minuman manis']),
+    q('tinggal', 'sosial', 'Mbak tinggal dengan siapa dan siapa yang membantu merawat?', 'Di kos sendirian, Dok. Teman kos yang antar saya kemari.', ['tinggal dengan siapa', 'tinggal', 'kos', 'siapa merawat', 'sendirian']),
+    q('haid', 'sosial', 'Kapan haid terakhir Mbak, dan apakah mungkin hamil?', 'Seminggu lalu selesai, Dok. Tidak mungkin hamil.', ['haid', 'menstruasi', 'hamil', 'hpht', 'kehamilan'], { gate: [55, 'Kenapa ditanya itu, Dok? Nanti saja.'] }),
+    q('alergi-obat', 'alergi', 'Apakah Mbak punya alergi obat atau makanan?', 'Tidak ada, Dok.', ['alergi obat', 'alergi', 'alergi makanan']),
+    q('keluarga', 'keluarga', 'Apakah ada keluarga yang punya diabetes atau penyakit tiroid?', 'Nenek dari ibu diabetes, Dok. Ibu saya tiroid.', ['riwayat keluarga', 'keluarga diabetes', 'keluarga tiroid', 'keluarga sakit', 'keluarga']),
+    ...iceEntries(
+      'Saya kira asam lambung kambuh, Dok, soalnya muntah dan perut sakit. Tapi napas saya jadi aneh.',
+      'Saya takut gulanya terlalu tinggi dan masuk ICU lagi, Dok. Kuliah saya juga lagi ujian.',
+      'Saya mau muntahnya berhenti dan napas saya normal lagi, Dok.',
+    ),
+    q('trauma', 'rps', 'Apakah ada kecelakaan atau benturan baru-baru ini?', 'Tidak ada, Dok.', ['kecelakaan', 'benturan', 'jatuh', 'trauma'], { distractor: true }),
+    q('nyeri-dada', 'rps', 'Apakah ada nyeri dada atau jantung berdebar?', 'Tidak, Dok.', ['nyeri dada', 'jantung berdebar', 'dada'], { distractor: true }),
+  ],
+  exam: [
+    exam('umum', 'umum', 'Keadaan umum dan napas', 'Tampak sakit sedang-berat, lemah, napas Kussmaul (cepat dan dalam), bau aseton, GCS 14.', { abnormal: true }),
+    exam('dehidrasi', 'kepala-leher', 'Tanda dehidrasi', 'Mukosa mulut kering, mata cekung, turgor kulit menurun.', { abnormal: true }),
+    exam('sirkulasi', 'ekstremitas', 'Akral dan CRT', 'Akral dingin, CRT 3 detik, nadi kecil dan cepat.', { abnormal: true }),
+    exam('abdomen', 'abdomen', 'Abdomen', 'Nyeri tekan difus ringan di epigastrium, tidak ada defans muskular, bising usus menurun.', { abnormal: true }),
+    exam('cva', 'abdomen', 'Ketok CVA', 'Nyeri ketok CVA kanan ringan.', { abnormal: true }),
+    exam('paru', 'paru', 'Paru', 'Vesikuler, tidak ada ronki atau mengi, napas dalam teratur.'),
+    exam('jantung', 'jantung', 'Jantung', 'Takikardia reguler, tidak ada murmur.'),
+    exam('neuro', 'neurologi', 'Neurologi', 'Mengantuk tetapi mudah dibangunkan, tidak ada defisit fokal, tidak ada kaku kuduk.'),
+    exam('kulit', 'kulit', 'Kulit', 'Kulit kering dan hangat, tidak ada ulkus.', { distractor: true }),
+    exam('tenggorok', 'kepala-leher', 'Tenggorokan', 'Faring tidak hiperemis.', { distractor: true }),
+  ],
+  tests: makeTests(MODE, [
+    ['gds', [{ text: 'Glukosa darah sewaktu 512 mg/dL.', abnormal: true, critical: true }]],
+    ['ketone', [{ text: 'Keton darah 5,2 mmol/L (ketosis berat).', abnormal: true, critical: true }]],
+    [
+      'agd',
+      [
+        { text: 'pH 7,02, pCO2 14, HCO3 4 (asidosis metabolik berat, anion gap tinggi).', abnormal: true, critical: true, minStage: 2 },
+        { text: 'pH 7,14, pCO2 18, HCO3 7 (asidosis metabolik, anion gap tinggi dengan kompensasi napas).', abnormal: true, critical: true },
+      ],
+    ],
+    [
+      'elektrolit',
+      [
+        { text: 'Na 131, K 3,4, Cl 98 mmol/L (Na terkoreksi 138; kalium rendah, tubuh kekurangan kalium).', abnormal: true, critical: true },
+      ],
+    ],
+    ['ureum-kreatinin', [{ text: 'Ureum 52, kreatinin 1,3 mg/dL (prerenal akibat dehidrasi).', abnormal: true }]],
+    ['dpl', [{ text: 'Hb 14,8 g/dL, hematokrit 45%, leukosit 16.800/uL, trombosit 310.000/uL.', abnormal: true }]],
+    ['urinalisis', [{ text: 'Urinalisis: glukosa ++++, keton +++, leukosit 25-30/LPB, nitrit positif. Mendukung ISK sebagai pencetus.', abnormal: true }]],
+    ['ekg', [{ text: 'EKG: sinus takikardia 116x/menit, gelombang T mendatar dengan gelombang U tampak (sesuai hipokalemia).', abnormal: true }]],
+    ['laktat', [{ text: 'Laktat 2,6 mmol/L (meningkat ringan).', abnormal: true }]],
+    ['kultur-darah', [{ text: 'Kultur darah diambil, hasil final 48 jam.', abnormal: false }]],
+    ['hba1c', [{ text: 'HbA1c 13,8% (kontrol sangat buruk).', abnormal: true }], 45],
+    'troponin',
+    'foto-toraks',
+    'ct-kepala',
+  ]),
+  panels: [
+    { id: 'panel-kad', label: 'Panel ketoasidosis', testIds: ['gds', 'ketone', 'agd', 'elektrolit', 'ureum-kreatinin'] },
+    { id: 'panel-pencetus', label: 'Panel pencetus infeksi', testIds: ['dpl', 'urinalisis', 'kultur-darah'] },
+  ],
+  diagnoses: [
+    { id: 'kad', label: 'Ketoasidosis diabetik (DM tipe 1) dengan pencetus ISK' },
+    { id: 'hhs', label: 'Status hiperglikemik hiperosmolar' },
+    { id: 'gastroenteritis', label: 'Gastroenteritis akut dengan dehidrasi' },
+    { id: 'apendisitis', label: 'Apendisitis akut' },
+    { id: 'asidosis-laktat', label: 'Asidosis laktat' },
+  ],
+  correctDiagnosisId: 'kad',
+  differentialIds: ['hhs', 'gastroenteritis', 'apendisitis', 'asidosis-laktat'],
+  treatments: pickTreatments([
+    'akses-iv',
+    'monitor',
+    'kateter',
+    'kristaloid-bolus',
+    'insulin-iv',
+    'kalium-iv',
+    'antibiotik-seftriakson',
+    'ondansetron',
+    'bikarbonat-iv',
+    'insulin-basal',
+    'metformin-850',
+    'dextrose-40',
+    'kristaloid-hati',
+  ]),
+  indicatedTreatmentIds: ['akses-iv', 'monitor', 'kateter', 'kristaloid-bolus', 'insulin-iv', 'kalium-iv', 'antibiotik-seftriakson', 'ondansetron'],
+  criticalTreatmentIds: ['kristaloid-bolus', 'insulin-iv'],
+  contraindicated: [
+    { id: 'bikarbonat-iv', reason: 'Bikarbonat rutin tidak dianjurkan pada pH 6,9 atau lebih dan dapat memperburuk hipokalemia.' },
+    { id: 'metformin-850', reason: 'Metformin dikontraindikasikan pada asidosis dan dehidrasi berat.' },
+  ],
+  dispositions: pickDispositions(['pulang', 'observasi-igd', 'rawat-bangsal', 'rawat-hcu', 'rawat-icu']),
+  correctDispositionId: 'rawat-hcu',
+  acceptableDispositionIds: ['rawat-icu'],
+  er: {
+    arrivalSec: 240,
+    triage: {
+      esi: 2,
+      zone: 'red',
+      reason: 'Diabetes tipe 1 tanpa insulin 3 hari dengan napas Kussmaul, muntah, dehidrasi, dan hipotensi ringan: ketoasidosis sampai terbukti sebaliknya.',
+    },
+    timeline: [
+      {
+        stage: 1,
+        atSec: 180,
+        vitalsDelta: { hr: 8, sbp: -8, dbp: -5, rr: 4, gcs: -1 },
+        line: 'Napas makin dalam dan cepat, mual bertambah, pasien makin lemas.',
+        averted: ['kristaloid-bolus'],
+      },
+      {
+        stage: 2,
+        atSec: 360,
+        vitalsDelta: { hr: 14, sbp: -14, dbp: -10, rr: 4, spo2: -2, gcs: -3 },
+        line: 'Asidosis berat: tekanan darah turun dan kesadaran menurun.',
+        averted: ['kristaloid-bolus', 'insulin-iv'],
+      },
+      {
+        stage: 3,
+        atSec: 580,
+        vitalsDelta: { hr: -80, sbp: -45, dbp: -30, spo2: -20, gcs: -7 },
+        line: 'Pasien henti jantung (aritmia akibat asidosis berat).',
+        averted: ['kristaloid-bolus', 'insulin-iv'],
+      },
+    ],
+    effects: [
+      { treatmentId: 'kristaloid-bolus', improves: true, vitalsDelta: { hr: -10, sbp: 12, dbp: 8 } },
+      { treatmentId: 'insulin-iv', vitalsDelta: { rr: -4, hr: -4 } },
+      { treatmentId: 'kalium-iv', vitalsDelta: { hr: -2 } },
+      { treatmentId: 'antibiotik-seftriakson', vitalsDelta: { temp: -0.3 } },
+      { treatmentId: 'bikarbonat-iv', harmful: true, vitalsDelta: { hr: 8 } },
+      { treatmentId: 'metformin-850', harmful: true },
+    ],
+    criticalDeadlineSec: 360,
+  },
+  guidelineIds: ['perkeni-dm2-2021', 'ada-hyperglycemic-crises-2024'],
+  rubric: buildRubric({
+    criteria: [
+      crit('an-01', 'anamnesis', 2, 'Gejala hiperglikemia dan perjalanan penyakit', P.asked(['onset', 'haus-kencing', 'muntah', 'berat-badan'], 3), {
+        met: 'Awitan, gejala hiperglikemia, dan muntah ditanyakan.',
+        partial: 'Sebagian gejala ditanyakan.',
+        missed: 'Gejala hiperglikemia tidak digali.',
+      }, { partial: P.asked(['onset', 'haus-kencing', 'muntah', 'berat-badan'], 2), improve: 'Tanyakan haus, sering kencing, penurunan berat badan, dan muntah.' }),
+      crit('an-02', 'anamnesis', 3, 'Penggunaan insulin dan alasan putus obat', P.asked(['insulin-terakhir', 'alasan-insulin'], 2), {
+        met: 'Insulin terakhir dan alasan putus obat ditanyakan.',
+        partial: 'Hanya kapan insulin terakhir yang ditanyakan.',
+        missed: 'Kepatuhan insulin tidak ditanyakan.',
+      }, { partial: P.asked(['insulin-terakhir', 'alasan-insulin'], 1), ref: 'ada-hyperglycemic-crises-2024', improve: 'Tanyakan kapan insulin terakhir dan mengapa terputus; alasan biaya sering tersembunyi.' }),
+      crit('an-03', 'anamnesis', 2, 'Pencetus: infeksi', P.asked(['demam-infeksi']), {
+        met: 'Gejala infeksi ditanyakan dan ISK terungkap.',
+        missed: 'Pencetus infeksi tidak ditanyakan.',
+      }, { ref: 'ada-hyperglycemic-crises-2024', improve: 'Cari pencetus: infeksi, putus insulin, dan penyakit akut lain.' }),
+      crit('an-04', 'anamnesis', 2, 'Tanda bahaya napas dan kesadaran', P.asked(['napas', 'kesadaran'], 2), {
+        met: 'Pola napas dan kesadaran ditanyakan.',
+        partial: 'Hanya salah satu yang ditanyakan.',
+        missed: 'Tanda bahaya tidak ditanyakan.',
+      }, { partial: P.asked(['napas', 'kesadaran'], 1), improve: 'Tanyakan napas cepat dalam, bau napas, dan penurunan kesadaran.' }),
+      crit('an-05', 'anamnesis', 1, 'Riwayat KAD sebelumnya', P.asked(['riwayat-kad', 'riwayat-dm'], 1), {
+        met: 'Riwayat diabetes atau KAD sebelumnya ditanyakan.',
+        missed: 'Riwayat diabetes tidak ditanyakan.',
+      }, { improve: 'Tanyakan lama diabetes dan episode ketoasidosis sebelumnya.' }),
+      crit('pe-01', 'pemeriksaan', 3, 'Menilai dehidrasi dan sirkulasi', P.examined(['dehidrasi', 'sirkulasi'], 2), {
+        met: 'Dehidrasi dan sirkulasi dinilai.',
+        partial: 'Hanya salah satu yang dinilai.',
+        missed: 'Status cairan tidak dinilai.',
+      }, { partial: P.examined(['dehidrasi', 'sirkulasi'], 1), improve: 'Nilai mukosa, turgor, akral, dan CRT untuk menentukan defisit cairan.' }),
+      crit('pe-02', 'pemeriksaan', 2, 'Pola napas dan kesadaran', P.examined(['umum', 'neuro'], 2), {
+        met: 'Napas Kussmaul dan kesadaran dinilai.',
+        partial: 'Hanya salah satunya.',
+        missed: 'Pola napas dan kesadaran tidak dinilai.',
+      }, { partial: P.examined(['umum', 'neuro'], 1), improve: 'Napas Kussmaul dan bau aseton adalah petunjuk khas asidosis.' }),
+      crit('pe-03', 'pemeriksaan', 1, 'Abdomen dan sumber infeksi', P.examined(['abdomen', 'cva'], 2), {
+        met: 'Abdomen dan nyeri ketok CVA diperiksa.',
+        partial: 'Hanya salah satunya.',
+        missed: 'Abdomen tidak diperiksa.',
+      }, { partial: P.examined(['abdomen', 'cva'], 1), improve: 'Nyeri perut pada KAD bisa palsu; tetap cari apendisitis dan pielonefritis.' }),
+      crit('pn-01', 'penalaran', 3, 'Glukosa dan keton darah', P.ordered(['gds', 'ketone'], 2), {
+        met: 'Glukosa dan keton darah diperiksa.',
+        partial: 'Hanya salah satu yang diperiksa.',
+        missed: 'Glukosa dan keton tidak diperiksa.',
+      }, { partial: P.ordered(['gds', 'ketone'], 1), ref: 'ada-hyperglycemic-crises-2024', improve: 'Glukosa dan keton darah adalah dasar diagnosis KAD.' }),
+      crit('pn-02', 'penalaran', 3, 'Gas darah dan elektrolit', P.ordered(['agd', 'elektrolit'], 2), {
+        met: 'Gas darah dan elektrolit diperiksa.',
+        partial: 'Hanya salah satu yang diperiksa.',
+        missed: 'Gas darah dan elektrolit tidak diperiksa.',
+      }, { partial: P.ordered(['agd', 'elektrolit'], 1), ref: 'ada-hyperglycemic-crises-2024', improve: 'Kalium harus diketahui sebelum insulin diberikan.' }),
+      crit('pn-03', 'penalaran', 2, 'Mencari pencetus', P.ordered(['urinalisis', 'dpl', 'kultur-darah'], 2), {
+        met: 'Urinalisis, darah lengkap, atau kultur dipesan.',
+        partial: 'Hanya satu pemeriksaan pencetus.',
+        missed: 'Pencetus tidak dicari.',
+      }, { partial: P.ordered(['urinalisis', 'dpl', 'kultur-darah'], 1), improve: 'Periksa urin dan darah untuk mencari infeksi pencetus.' }),
+      crit('pn-04', 'penalaran', 1, 'EKG untuk kalium', P.ordered(['ekg']), {
+        met: 'EKG dibuat dan perubahan hipokalemia terlihat.',
+        missed: 'EKG tidak dibuat.',
+      }, { improve: 'EKG membantu menilai efek kalium dan menyingkirkan iskemia.' }),
+      crit('pn-05', 'penalaran', 3, 'Diagnosis ketoasidosis diabetik', P.dx, {
+        met: 'Diagnosis KAD benar.',
+        missed: 'Diagnosis tidak sesuai dengan hiperglikemia, ketosis, dan asidosis.',
+      }, { ref: 'perkeni-dm2-2021', improve: 'Glukosa tinggi, keton positif, dan pH rendah adalah ketoasidosis.' }),
+      crit('pn-06', 'penalaran', 1, 'Triase zona merah', { kind: 'triage', equals: 'correct' }, {
+        met: 'Pasien ditempatkan di zona merah.',
+        missed: 'Zona triase tidak sesuai kegawatan.',
+      }, { improve: 'Napas Kussmaul dengan hipotensi masuk zona merah.' }),
+      crit('tr-01', 'terapi', 3, 'Resusitasi cairan kristaloid', P.treated(['kristaloid-bolus']), {
+        met: 'Kristaloid bolus diberikan.',
+        missed: 'Resusitasi cairan tidak diberikan.',
+      }, { ref: 'ada-hyperglycemic-crises-2024', improve: 'Cairan isotonik adalah langkah pertama pada KAD, sebelum insulin.', highlight: 'Resusitasi cairan diberikan tepat waktu.' }),
+      crit('tr-02', 'terapi', 3, 'Insulin IV kontinu', P.treated(['insulin-iv']), {
+        met: 'Insulin infus diberikan.',
+        missed: 'Insulin IV tidak diberikan.',
+      }, { ref: 'ada-hyperglycemic-crises-2024', improve: 'Insulin infus kontinu menekan produksi keton; berikan setelah kalium diketahui.' }),
+      crit('tr-03', 'terapi', 2, 'Penggantian kalium', P.treated(['kalium-iv']), {
+        met: 'Kalium diganti bersama insulin.',
+        missed: 'Kalium tidak diganti padahal kadarnya rendah.',
+      }, { ref: 'ada-hyperglycemic-crises-2024', improve: 'Kalium di bawah 3,3 menahan insulin; kalium 3,3-5,3 diganti bersama insulin.' }),
+      crit('tr-04', 'terapi', 1, 'Akses, monitor, kateter, dan antiemetik', P.treated(['akses-iv', 'monitor', 'kateter', 'ondansetron'], undefined, 3), {
+        met: 'Akses IV, monitoring, kateter, dan antiemetik diberikan.',
+        partial: 'Hanya sebagian yang diberikan.',
+        missed: 'Penunjang dasar tidak diberikan.',
+      }, { partial: P.treated(['akses-iv', 'monitor', 'kateter', 'ondansetron'], undefined, 1), improve: 'Pasang akses IV, monitor, kateter, dan beri antiemetik.' }),
+      crit('tr-05', 'terapi', 1, 'Antibiotik untuk pencetus ISK', P.treated(['antibiotik-seftriakson']), {
+        met: 'Antibiotik diberikan untuk ISK pencetus.',
+        missed: 'Pencetus infeksi tidak diobati.',
+      }, { improve: 'Obati pencetus setelah kultur diambil.' }),
+      crit('tr-06', 'terapi', 2, 'Disposisi perawatan intensif', P.dispo, {
+        met: 'Pasien dirawat di HCU.',
+        partial: 'Dirawat di ICU. Pilihan ini masih bisa diterima.',
+        missed: 'Disposisi tidak sesuai dengan KAD.',
+      }, { partial: { kind: 'disposition', equals: 'acceptable' }, ref: 'ada-hyperglycemic-crises-2024', improve: 'KAD sedang-berat dirawat di HCU atau ICU dengan monitor glukosa tiap jam.' }),
+      crit('ks-01', 'keselamatan', 3, 'Cairan dalam 6 menit sejak masuk bed', P.treated(['kristaloid-bolus'], 360), {
+        met: 'Resusitasi cairan diberikan dalam batas waktu.',
+        missed: 'Resusitasi cairan terlambat atau tidak diberikan.',
+      }, { ref: 'ada-hyperglycemic-crises-2024', improve: 'Mulailah cairan segera: dehidrasi berat adalah penyebab utama syok pada KAD.' }),
+      crit('ks-02', 'keselamatan', 3, 'Tidak memberi bikarbonat atau metformin', P.not(P.treated('contraindicated')), {
+        met: 'Tidak ada obat kontraindikasi.',
+        missed: 'Bikarbonat atau metformin diberikan.',
+      }, { ref: 'ada-hyperglycemic-crises-2024', improve: 'Hindari bikarbonat rutin dan metformin pada KAD.' }),
+      crit('ks-03', 'keselamatan', 3, 'Pasien selamat', P.survived, {
+        met: 'Pasien selamat sampai disposisi.',
+        missed: 'Pasien meninggal selama penanganan.',
+      }, { improve: 'Cairan dan insulin lebih awal mencegah asidosis berat.' }),
+      safetyNetCriterion(1),
+    ],
+    breaches: [
+      { id: 'br-kontra', when: P.treated('contraindicated'), what: 'Memberikan bikarbonat rutin atau metformin pada ketoasidosis diabetik.', guidelineRef: 'ada-hyperglycemic-crises-2024' },
+      { id: 'br-insulin-tanpa-kalium', when: P.all(P.treated(['insulin-iv']), P.not(P.ordered(['elektrolit']))), what: 'Memberikan insulin tanpa mengetahui kadar kalium.', guidelineRef: 'ada-hyperglycemic-crises-2024' },
+      { id: 'br-pulang', when: { kind: 'disposition', equals: 'pulang' }, what: 'Memulangkan pasien dengan ketoasidosis diabetik.', guidelineRef: 'perkeni-dm2-2021' },
+      { id: 'br-tanpa-kritis', when: P.not(P.treated('critical')), what: 'Tidak memberikan cairan dan insulin pada ketoasidosis diabetik.', guidelineRef: 'ada-hyperglycemic-crises-2024' },
+    ],
+    teachingPoints: [
+      'KAD adalah gula tinggi, keton positif, dan asidosis; nyeri perut dan muntah sering menyamarkannya.',
+      'Urutan terapi: cairan dulu, cek kalium, lalu insulin infus; kalium rendah menahan insulin.',
+      'Bikarbonat tidak diberikan rutin, dan pencetus seperti ISK harus dicari dan diobati.',
+      'Tanyakan alasan putus insulin, termasuk biaya: edukasi dan akses obat mencegah kekambuhan.',
+    ],
+  }),
+}

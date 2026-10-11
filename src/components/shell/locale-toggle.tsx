@@ -13,7 +13,7 @@ export function LocaleToggle({ className }: { className?: string }) {
       role="group"
       aria-label={t('nav.language')}
       data-slot="locale-toggle"
-      className={cn('inline-flex rounded-full border border-line-strong p-0.5', className)}
+      className={cn('inline-flex rounded-row border border-line p-0.5 pointer-coarse:border-0 pointer-coarse:p-0', className)}
     >
       {LOCALES.map((l) => (
         <button
@@ -23,8 +23,8 @@ export function LocaleToggle({ className }: { className?: string }) {
           aria-pressed={locale === l}
           onClick={() => setLocale(l)}
           className={cn(
-            'h-8 min-w-10 rounded-full px-2.5 text-label font-semibold uppercase transition-colors duration-100 ease-out pointer-coarse:h-11 pointer-coarse:min-w-11',
-            locale === l ? 'bg-ink-1 text-surface' : 'text-ink-2 hover:text-ink-1',
+            'h-6 min-w-9 rounded-xs px-2 text-chip font-medium uppercase transition-colors duration-100 ease-out pointer-coarse:h-11 pointer-coarse:min-w-11',
+            locale === l ? 'bg-hover text-ink-1' : 'text-ink-2 hover:text-ink-1',
           )}
         >
           {l}

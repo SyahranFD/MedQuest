@@ -9,21 +9,25 @@
    --------------------------------------------------------------------------- */
 :root {
   /* surfaces (white-dominant, two close tones) */
-  --mq-ground: #f8faf8;
+  --mq-chrome: #e0e4df; /* sidebar and header ground, a step flatter than the content */
+  --mq-ground: #f9faf8; /* content ground */
+  --mq-raised: #fdfefd; /* cards, inputs, popovers (never pure white) */
   --mq-surface: #fdfefd;
-  --mq-panel: #f1f5f2;
-  --mq-inset: #e8eeea;
+  --mq-panel: #f1f2f0;
+  --mq-inset: #e6e9e5;
+  --mq-hover: rgba(20, 30, 25, 0.045); /* hover and active plate */
 
   /* ink */
-  --mq-ink-1: #14231c;
-  --mq-ink-2: #455a50;
-  --mq-ink-3: #6f8178;
-  --mq-ink-4: #9aa9a1;
+  --mq-ink-1: #16201b; /* headings, primary text, active icons */
+  --mq-ink-2: #2f3a35; /* body */
+  --mq-ink-3: #5f6b65; /* metadata, inactive nav (4.5:1 on ground) */
+  --mq-ink-4: #7d8882; /* placeholder only */
   --mq-ink-on-primary: #f8fbf9;
 
   /* lines (hairlines instead of shadows) */
-  --mq-line: #dce5df;
-  --mq-line-strong: #c4d1c9;
+  --mq-line: rgba(20, 30, 25, 0.1);
+  --mq-line-soft: rgba(20, 30, 25, 0.075);
+  --mq-line-strong: rgba(20, 30, 25, 0.16);
 
   /* the single accent: calm sage-emerald (button fill passes AA with light text) */
   --mq-primary: #287e63;
@@ -33,14 +37,33 @@
   --mq-primary-quiet: #e3f0ea;
 
   /* status (solid badges, never tonal; rule 8.1) */
-  --mq-danger: #c23b3b;
+  --mq-danger: #c0392b;
   --mq-danger-ink: #fbf5f5;
   --mq-warning: #e0a526;
   --mq-warning-ink: #2b2208;
-  --mq-success: #4a7a1f;
+  --mq-success: #3f7d1e;
   --mq-success-ink: #f7faf3;
-  --mq-neutral: #56665e;
+  --mq-neutral: #5f6b65;
   --mq-neutral-ink: #f6f8f7;
+
+  /* bright status chips (E8): light fill, dark ink, 8:1+; buttons and icons keep the strong hues above */
+  --mq-chip-danger: #ff9f93;
+  --mq-chip-danger-ink: #3a0f0a;
+  --mq-chip-warning: #ffd25e;
+  --mq-chip-warning-ink: #2b2208;
+  --mq-chip-success: #8fdba0;
+  --mq-chip-success-ink: #10301a;
+  --mq-chip-neutral: #d3dad6;
+  --mq-chip-neutral-ink: #16201b;
+  --mq-chip-info: #8ccff5;
+  --mq-chip-info-ink: #0d2a3d;
+
+  /* bright category fills for badges and folder title chips (dark ink, 8:1+) */
+  --mq-chip-infection: #8ccff5;
+  --mq-chip-cardio: #ff9f93;
+  --mq-chip-endocrine: #ffd25e;
+  --mq-chip-pulmo: #7fe0d6;
+  --mq-chip-neuro: #c9b8f7;
 
   /* category hues: a short named set for specialty / case type (see CLAUDE.md 8.3) */
   --mq-cat-infection: #4a7fb5;
@@ -56,8 +79,8 @@
   --mq-cat-pulmo-fill: #287a80;
   --mq-cat-neuro-fill: #77619f;
 
-  /* muted ink for small text (--mq-ink-3 is 3.9:1 on ground, fine only for large text) */
-  --mq-ink-muted: #5c6f65;
+  /* muted ink for small text (ink-3 now equals this value) */
+  --mq-ink-muted: #5f6b65;
 
   /* quiet illustration tints derived from the hues above (illustration fields only) */
   --mq-tint-green: #e4f0ea;
@@ -73,7 +96,40 @@
   --mq-clay-coral: #e58c7f;
   --mq-clay-butter: #f0cf7a;
 
-  /* radii (deliberately not uniform) */
+  /* case folder cards: one kraft body, only the tab carries the specialty hue (CLAUDE.md 8.3 E7) */
+  --mq-folder-front: #eadcc0;
+  --mq-folder-back: #dcc9a2;
+  --mq-folder-paper: #fbf6e9;
+  --mq-folder-tab-infection: #5f8fc0;
+  --mq-folder-tab-cardio: #c9695f;
+  --mq-folder-tab-endocrine: #d9a021;
+  --mq-folder-tab-pulmo: #4f9a9a;
+  --mq-folder-tab-neuro: #8a73b8;
+  /* patient avatar parts */
+  --mq-skin-1: #e8b88f;
+  --mq-skin-2: #d9a273;
+  --mq-skin-3: #c68c5d;
+  --mq-skin-4: #b97d52;
+  --mq-skin-5: #a86f48;
+  --mq-hair-1: #241a14;
+  --mq-hair-2: #2a2420;
+  --mq-hair-3: #5a3b2a;
+  --mq-hair-gray: #b9bcbc;
+  --mq-scarf-1: #3a4a63;
+  --mq-scarf-2: #7b5c8a;
+  --mq-scarf-3: #4f7d78;
+  --mq-scarf-4: #7a3b45;
+  --mq-cloth-1: #5f7d9a;
+  --mq-cloth-2: #c27a63;
+  --mq-cloth-3: #c9a13a;
+  --mq-cloth-4: #6f9a7f;
+  --mq-cloth-5: #9b7bb0;
+  --mq-cloth-6: #b5603f;
+  --mq-avatar-ink: #2a1f1a;
+
+  /* radii (deliberately not uniform): row 8 inline and rows, sm 10 buttons and inputs, card 12 cards and floating */
+  --mq-radius-row: 8px;
+  --mq-radius-card: 12px;
   --mq-radius-xs: 6px;
   --mq-radius-sm: 10px;
   --mq-radius-md: 16px;
@@ -81,7 +137,14 @@
   --mq-radius-xl: 36px;
 
   /* geometry */
-  --mq-shell-nav: 4.25rem;
+  --mq-shell-nav: 4.25rem; /* marketing nav height */
+  --mq-sidebar: 17rem;
+  --mq-header: 3rem;
+  --mq-page-list: 70rem; /* 1120px */
+  --mq-page-read: 45rem; /* 720px */
+  --mq-control: 2.25rem; /* default control height, 36px */
+  --mq-control-sm: 1.75rem; /* compact, 28px */
+  --mq-field: 2.5rem; /* inputs, 40px */
   --mq-tap: 44px;
   --mq-container: 1240px;
 
@@ -147,6 +210,20 @@
   --text-label--line-height: 1.3;
   --text-label--letter-spacing: 0.04em;
 
+  /* app scale (DESIGN-SYSTEM.md): 12 / 13 / 14 / 16 / 24 */
+  --text-title: 1.5rem;
+  --text-title--line-height: 2rem;
+  --text-title--letter-spacing: -0.02em;
+  --text-section: 1rem;
+  --text-section--line-height: 1.5rem;
+  --text-section--letter-spacing: -0.01em;
+  --text-meta: 0.8125rem;
+  --text-meta--line-height: 1.125rem;
+  --text-meta--letter-spacing: 0em;
+  --text-chip: 0.75rem;
+  --text-chip--line-height: 1rem;
+  --text-chip--letter-spacing: 0em;
+
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
@@ -154,6 +231,10 @@
 }
 
 @theme inline {
+  --color-chrome: var(--mq-chrome);
+  --color-raised: var(--mq-raised);
+  --color-hover: var(--mq-hover);
+  --color-line-soft: var(--mq-line-soft);
   --color-ground: var(--mq-ground);
   --color-surface: var(--mq-surface);
   --color-panel: var(--mq-panel);
@@ -178,6 +259,21 @@
   --color-success-ink: var(--mq-success-ink);
   --color-neutral: var(--mq-neutral);
   --color-neutral-ink: var(--mq-neutral-ink);
+  --color-chip-danger: var(--mq-chip-danger);
+  --color-chip-danger-ink: var(--mq-chip-danger-ink);
+  --color-chip-warning: var(--mq-chip-warning);
+  --color-chip-warning-ink: var(--mq-chip-warning-ink);
+  --color-chip-success: var(--mq-chip-success);
+  --color-chip-success-ink: var(--mq-chip-success-ink);
+  --color-chip-neutral: var(--mq-chip-neutral);
+  --color-chip-neutral-ink: var(--mq-chip-neutral-ink);
+  --color-chip-info: var(--mq-chip-info);
+  --color-chip-info-ink: var(--mq-chip-info-ink);
+  --color-chip-infection: var(--mq-chip-infection);
+  --color-chip-cardio: var(--mq-chip-cardio);
+  --color-chip-endocrine: var(--mq-chip-endocrine);
+  --color-chip-pulmo: var(--mq-chip-pulmo);
+  --color-chip-neuro: var(--mq-chip-neuro);
   --color-cat-infection: var(--mq-cat-infection);
   --color-cat-cardio: var(--mq-cat-cardio);
   --color-cat-endocrine: var(--mq-cat-endocrine);
@@ -194,6 +290,9 @@
   --color-tint-coral: var(--mq-tint-coral);
   --color-tint-amber: var(--mq-tint-amber);
   --color-tint-teal: var(--mq-tint-teal);
+  --color-paper: var(--mq-folder-paper);
+  --radius-row: var(--mq-radius-row);
+  --radius-card: var(--mq-radius-card);
   --radius-xs: var(--mq-radius-xs);
   --radius-sm: var(--mq-radius-sm);
   --radius-md: var(--mq-radius-md);
@@ -205,6 +304,28 @@
 @layer base {
   * {
     border-color: var(--mq-line);
+  }
+  /* Tailwind v4 preflight resets buttons to the default cursor; every enabled control gets a pointer. */
+  :where(
+      button,
+      [role='button'],
+      [role='tab'],
+      [role='option'],
+      [role='menuitem'],
+      [role='switch'],
+      [role='checkbox'],
+      [role='radio'],
+      summary,
+      select,
+      a[href],
+      label[for],
+      input:is([type='checkbox'], [type='radio'], [type='range'], [type='submit'], [type='button'])
+    ):not(:disabled, [aria-disabled='true']) {
+    cursor: pointer;
+  }
+  :where(button, [role='button']):disabled,
+  :where([aria-disabled='true']) {
+    cursor: not-allowed;
   }
   html {
     font-family: var(--font-sans);
@@ -267,11 +388,11 @@
 /* Increased contrast: defined borders and darker secondary ink (Apple rule 13) */
 @media (prefers-contrast: more) {
   :root {
-    --mq-line: #6f8178;
-    --mq-line-strong: #455a50;
-    --mq-ink-2: #2a3c33;
-    --mq-ink-3: #3e5148;
-    --mq-ink-muted: #3e5148;
+    --mq-line: #5f6b65;
+    --mq-line-strong: #2f3a35;
+    --mq-ink-2: #1f2a25;
+    --mq-ink-3: #3a4640;
+    --mq-ink-muted: #3a4640;
   }
 }
 
@@ -282,24 +403,21 @@
     border-bottom: 1px solid var(--mq-line);
   }
   .mq-skeleton {
-    background: linear-gradient(
-      100deg,
-      var(--mq-panel) 30%,
-      var(--mq-inset) 50%,
-      var(--mq-panel) 70%
-    );
-    background-size: 200% 100%;
-    animation: mq-shimmer 1.4s linear infinite;
+    background: var(--mq-panel);
+    animation: mq-pulse 1.6s ease-in-out infinite;
     border-radius: var(--mq-radius-sm);
   }
 }
 
-@keyframes mq-shimmer {
-  from {
-    background-position: 200% 0;
+@keyframes mq-pulse {
+  50% {
+    opacity: 0.55;
   }
-  to {
-    background-position: -200% 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mq-skeleton {
+    animation: none;
   }
 }
 

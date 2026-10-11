@@ -19,15 +19,15 @@ export function EmptyState({ title, description, icon: Icon = Inbox, action, cla
     <div
       data-slot="empty-state"
       className={cn(
-        'flex flex-col items-center gap-3 rounded-md border border-dashed border-line-strong bg-surface px-6 py-12 text-center',
+        'flex flex-col items-center gap-3 rounded-card border border-line bg-raised px-6 py-12 text-center',
         className,
       )}
     >
-      <span className="grid size-12 place-items-center rounded-md bg-panel text-ink-2">
-        <Icon size={24} strokeWidth={1.75} aria-hidden="true" />
+      <span className="grid size-10 place-items-center rounded-row bg-hover text-ink-3">
+        <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
       </span>
-      <h2 className="font-display text-heading-card font-semibold text-ink-1">{title ?? t('state.empty.title')}</h2>
-      <p className="max-w-sm text-body-s text-ink-2">{description ?? t('state.empty.body')}</p>
+      <h2 className="font-display text-section font-semibold text-ink-1">{title ?? t('state.empty.title')}</h2>
+      <p className="max-w-sm text-body-s text-ink-3">{description ?? t('state.empty.body')}</p>
       {action && <div className="pt-2">{action}</div>}
     </div>
   )

@@ -3,10 +3,10 @@ import type { ComponentProps } from 'react'
 import { cn } from '@/lib/utils'
 
 // Hairline border and a tonal shift, never a shadow. `tint` fills are for illustration cards (E1).
-const cardVariants = cva('flex flex-col gap-4 rounded-md border p-5 text-ink-1', {
+const cardVariants = cva('flex flex-col gap-4 rounded-card border p-4 text-ink-1 sm:p-5', {
   variants: {
     tone: {
-      surface: 'border-line bg-surface',
+      surface: 'border-line bg-raised',
       panel: 'border-transparent bg-panel',
       green: 'border-transparent bg-tint-green',
       blue: 'border-transparent bg-tint-blue',
@@ -32,7 +32,7 @@ export function CardTitle({ className, ...props }: ComponentProps<'h3'>) {
   return (
     <h3
       data-slot="card-title"
-      className={cn('text-heading-card font-semibold text-ink-1', className)}
+      className={cn('text-section font-semibold text-ink-1', className)}
       {...props}
     />
   )
@@ -40,7 +40,7 @@ export function CardTitle({ className, ...props }: ComponentProps<'h3'>) {
 
 export function CardDescription({ className, ...props }: ComponentProps<'p'>) {
   return (
-    <p data-slot="card-description" className={cn('text-body-s text-ink-2', className)} {...props} />
+    <p data-slot="card-description" className={cn('text-body-s text-ink-3', className)} {...props} />
   )
 }
 

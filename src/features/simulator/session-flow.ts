@@ -1,8 +1,10 @@
 import { listCases } from '@/features/cases/repository'
 import type { Case, EmotionTracePoint } from '@/features/cases/types'
 import type { SessionRecord } from '@/features/session/repository'
+import { DEFAULT_BED_COUNT } from '@/features/session/er-engine'
 import { useSessionStore } from '@/features/session/store'
 import type { Session } from '@/features/session/types'
+import { categoryOf, seededShuffle } from './case-meta'
 
 // Start and finish a session. The emotion trace is not part of the saved Evaluation, so the
 // simulator keeps its own copy per record to draw the trust sparkline on the debrief.
@@ -50,13 +52,28 @@ export const markFresh = (id: string) => void fresh.add(id)
 export const isFresh = (id: string) => fresh.has(id)
 export const clearFresh = (id: string) => void fresh.delete(id)
 
-/** Start a session for a case: poli seats it, ER opens a shift with all ER cases and the chosen one first. */
+/**
+ * ER shift: the chosen case first, then other ER cases picked by a shuffle seeded with the chosen id
+ * (stable across reloads), different specialties first, capped at the bed count.
+ */
+export function composeShift(chosen: Case, erCases: readonly Case[]): string[] {
+  const shuffled = seededShuffle(
+    erCases.filter((x) => x.id !== chosen.id).sort((a, b) => a.id.localeCompare(b.id)),
+    chosen.id,
+  )
+  const seen = new Set([categoryOf(chosen)])
+  const distinct = shuffled.filter((x) => !seen.has(categoryOf(x)) && (seen.add(categoryOf(x)), true))
+  const rest = shuffled.filter((x) => !distinct.includes(x))
+  return [chosen, ...distinct, ...rest].slice(0, DEFAULT_BED_COUNT).map((x) => x.id)
+}
+
+/** Start a session for a case: poli seats it, ER opens a shift built by composeShift. */
 export async function startCaseSession(c: Case): Promise<Session> {
   const store = useSessionStore.getState()
   const id = `${c.mode}-${Date.now().toString(36)}`
   if (c.mode === 'poli') return store.startSession({ mode: 'poli', caseIds: [c.id], id })
   const er = await listCases({ mode: 'er' })
-  const caseIds = [c.id, ...er.filter((x) => x.id !== c.id).map((x) => x.id)]
+  const caseIds = composeShift(c, er)
   const session = store.startSession({ mode: 'er', caseIds, id })
   const arrival = c.er?.arrivalSec ?? 0
   if (arrival > 0) useSessionStore.getState().tick(arrival / session.speed)

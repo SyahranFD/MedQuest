@@ -1,8 +1,8 @@
+import type { ReactNode } from 'react'
 import { ClipboardCheck, FlaskConical, MessagesSquare, Pill, Stethoscope, type LucideIcon } from 'lucide-react'
-import { TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { TabsContent } from '@/components/ui/tabs'
 import type { Case } from '@/features/cases/types'
 import type { Session, SessionPatient } from '@/features/session/types'
-import { cn } from '@/lib/utils'
 import { AnamnesisPanel } from './anamnesis-panel'
 import { DiagnosisPanel } from './diagnosis-panel'
 import { ExamPanel } from './exam-panel'
@@ -12,7 +12,7 @@ import { useST } from './use-st'
 
 export type PanelTab = 'anamnesis' | 'exam' | 'orders' | 'dx' | 'rx'
 
-const TABS: { id: PanelTab; icon: LucideIcon }[] = [
+export const PANEL_TABS: { id: PanelTab; icon: LucideIcon }[] = [
   { id: 'anamnesis', icon: MessagesSquare },
   { id: 'exam', icon: Stethoscope },
   { id: 'orders', icon: FlaskConical },
@@ -32,54 +32,38 @@ export interface PanelActions {
   dispose: (dispositionId: string) => void
 }
 
-export function PanelTabList({ unseenResults, onPress, className }: { unseenResults: number; onPress?: () => void; className?: string }) {
-  const st = useST()
-  return (
-    <TabsList aria-label={st('tab.label')} className={cn('grid w-full grid-cols-5 gap-0 p-0.5 lg:p-1', className)}>
-      {TABS.map(({ id, icon: Icon }) => (
-        <TabsTrigger key={id} value={id} onClick={onPress} className="relative h-12 min-w-0 flex-col gap-0.5 px-0 text-label tracking-normal lg:h-11">
-          <Icon className="size-[18px]" strokeWidth={1.75} aria-hidden="true" />
-          <span className="max-w-full truncate">{st(`tab.${id}`)}</span>
-          {id === 'orders' && unseenResults > 0 && (
-            <span className="absolute top-1 right-1.5 grid size-4 place-items-center rounded-full bg-ink-1 text-[10px] font-semibold text-primary-ink">
-              {unseenResults}
-            </span>
-          )}
-        </TabsTrigger>
-      ))}
-    </TabsList>
-  )
-}
-
 interface PanelBodyProps {
   caseDef: Case
   session: Session
   patient: SessionPatient
   actions: PanelActions
   focusToken: number
+  /** ER only: triage controls, shown in the Diagnosis tab and under the note for a patient who is no longer in a bed. */
+  triage?: ReactNode
 }
 
-/** Tab contents for the selected patient; explains why they are unavailable when the patient is not in a bed. */
-export function PanelBody({ caseDef, session, patient, actions, focusToken }: PanelBodyProps) {
+/** Tab contents for the selected patient; explains why they are unavailable once the patient has left the bed. */
+export function PanelBody({ caseDef, session, patient, actions, focusToken, triage }: PanelBodyProps) {
   const st = useST()
   if (patient.status !== 'in-bed') {
-    return TABS.map(({ id }) => (
-      <TabsContent key={id} value={id}>
+    return PANEL_TABS.map(({ id }) => (
+      <TabsContent key={id} value={id} className="flex flex-col gap-4 p-5">
         <p role="status" className="rounded-md border border-dashed border-line-strong p-4 text-body-s text-ink-2" data-testid="panel-unavailable">
-          {st(patient.status === 'waiting' ? 'panel.waiting' : 'panel.resolved', { name: caseDef.patient.name })}
+          {st('panel.resolved', { name: caseDef.patient.name })}
         </p>
+        {triage}
       </TabsContent>
     ))
   }
   return (
     <>
-      <TabsContent value="anamnesis">
+      <TabsContent value="anamnesis" className="md:h-full">
         <AnamnesisPanel caseDef={caseDef} patient={patient} focusToken={focusToken} onAsk={actions.ask} onSend={actions.send} />
       </TabsContent>
-      <TabsContent value="exam">
+      <TabsContent value="exam" className="p-5">
         <ExamPanel caseDef={caseDef} patient={patient} onExamine={actions.examine} />
       </TabsContent>
-      <TabsContent value="orders">
+      <TabsContent value="orders" className="p-5">
         <OrdersPanel
           caseDef={caseDef}
           session={session}
@@ -89,10 +73,11 @@ export function PanelBody({ caseDef, session, patient, actions, focusToken }: Pa
           onMarkSeen={actions.markSeen}
         />
       </TabsContent>
-      <TabsContent value="dx">
+      <TabsContent value="dx" className="flex flex-col gap-5 p-5">
+        {triage}
         <DiagnosisPanel caseDef={caseDef} patient={patient} onCommit={actions.diagnose} />
       </TabsContent>
-      <TabsContent value="rx">
+      <TabsContent value="rx" className="p-5">
         <TreatmentPanel caseDef={caseDef} mode={session.mode} patient={patient} onTreat={actions.treat} onDispose={actions.dispose} />
       </TabsContent>
     </>

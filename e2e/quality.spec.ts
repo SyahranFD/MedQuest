@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { seed, startPoli, watch } from './helpers'
+import { closeTablet, seed, startPoli, watch } from './helpers'
 
 const ROUTES = ['/', '/app', '/app/kasus', '/app/riwayat', '/dosen', '/dosen/mahasiswa', '/dosen/mahasiswa/s01', '/dosen/perpustakaan', '/syarat', '/privasi']
 
@@ -82,15 +82,18 @@ test.describe('keyboard', () => {
     await seed(page)
     await startPoli(page)
     await page.locator('body').click({ position: { x: 5, y: 5 } })
-    await page.keyboard.press('1')
-    await expect(page.getByTestId('question-counter')).toContainText(/^1 dari/)
+    await page.keyboard.press('2')
+    await expect(page.getByRole('tab', { name: 'Periksa' })).toHaveAttribute('aria-selected', 'true')
     await page.keyboard.press('/')
     await expect(page.getByRole('textbox', { name: 'Ketik ucapan untuk pasien' })).toBeFocused()
-    await page.keyboard.press('Escape')
+    await closeTablet(page)
+    await page.keyboard.press('1')
     const tab = page.getByRole('tab', { name: 'Anamnesis' })
+    await expect(tab).toHaveAttribute('aria-selected', 'true')
     await tab.focus()
     await page.keyboard.press('ArrowRight')
     await expect(page.getByRole('tab', { name: 'Periksa' })).toHaveAttribute('aria-selected', 'true')
+    await closeTablet(page)
     const end = page.getByTestId('end-session')
     await end.focus()
     await page.keyboard.press('Enter')
@@ -132,7 +135,7 @@ test.describe('user preferences', () => {
       return { backdrop: getComputedStyle(header).backdropFilter, line: getComputedStyle(document.documentElement).getPropertyValue('--mq-line').trim() }
     })
     expect(style.backdrop).toBe('none')
-    expect(style.line).toBe('#6f8178')
+    expect(style.line).toBe('#5f6b65')
   })
 
   test('the in-app reduced motion setting stops infinite idle loops on the landing page', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
+import { ALL_CASES } from '@/features/cases/data'
 import { createMemoryHistory, createRootRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
@@ -35,6 +36,7 @@ describe('/dosen overview', () => {
     await renderPage(OverviewPage)
     expect(await screen.findByRole('heading', { level: 1, name: 'Dasbor kelas' })).toBeInTheDocument()
     expect(screen.getAllByRole('main')).toHaveLength(1)
+    expect(await screen.findByRole('heading', { level: 2, name: 'Perlu perhatian' })).toBeInTheDocument()
     expect(await screen.findByRole('heading', { level: 2, name: 'Kriteria yang paling sering terlewat' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 2, name: 'Skor per kompetensi' })).toBeInTheDocument()
     expect(screen.getAllByText('Data contoh').length).toBeGreaterThan(0)
@@ -43,7 +45,7 @@ describe('/dosen overview', () => {
 
   it('offers the chart as a table and as an accessible group', async () => {
     await renderPage(OverviewPage)
-    expect(await screen.findByRole('group', { name: /Grafik garis rerata skor kasus/ })).toBeInTheDocument()
+    expect(await screen.findByRole('group', { name: /Grafik garis rata-rata skor kasus/ })).toBeInTheDocument()
     expect(screen.getByText('Lihat sebagai tabel')).toBeInTheDocument()
   })
 
@@ -73,7 +75,7 @@ describe('/dosen/mahasiswa', () => {
     await renderPage(StudentsPage)
     const table = await screen.findByRole('table')
     const user = userEvent.setup({ delay: null })
-    const header = within(table).getByRole('columnheader', { name: /Rerata skor/ })
+    const header = within(table).getByRole('columnheader', { name: /Rata-rata skor/ })
     expect(header).toHaveAttribute('aria-sort', 'none')
     await user.click(within(header).getByRole('button'))
     expect(header).toHaveAttribute('aria-sort', 'descending')
@@ -85,7 +87,7 @@ describe('/dosen/mahasiswa', () => {
     await renderPage(StudentsPage)
     await screen.findByRole('table')
     const user = userEvent.setup({ delay: null })
-    await user.click(screen.getByRole('button', { name: 'Tidak aktif' }))
+    await user.click(screen.getByRole('tab', { name: 'Tidak aktif' }))
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
     expect(rows.length).toBeGreaterThan(0)
     for (const r of rows) expect(within(r).getAllByText('Tidak aktif').length).toBeGreaterThan(0)
@@ -113,16 +115,28 @@ describe('/dosen/mahasiswa/$studentId', () => {
 })
 
 describe('/dosen/perpustakaan', () => {
-  it('lists six cases with guidelines and assigns one to the class', async () => {
+  it('lists every case with guidelines and assigns one to the class', async () => {
     await renderPage(CaseCataloguePage)
     expect(await screen.findByRole('heading', { level: 1, name: 'Perpustakaan kasus' })).toBeInTheDocument()
     expect(screen.getAllByRole('main')).toHaveLength(1)
-    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(6))
-    expect(screen.getAllByText('Verifikasi sebelum dipakai sungguhan').length).toBe(6)
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(ALL_CASES.length))
+    expect(screen.getAllByText('Cek dulu sebelum dipakai').length).toBe(ALL_CASES.length)
     const user = userEvent.setup({ delay: null })
     await user.click(screen.getAllByRole('button', { name: 'Tugaskan ke kelas' })[0]!)
     await user.click(await within(await screen.findByRole('dialog')).findByRole('button', { name: 'Tugaskan ke kelas' }))
     await waitFor(() => expect(JSON.parse(localStorage.getItem(ASSIGNMENTS_KEY) ?? '[]')[0]?.target).toBe('class'))
     expect(await screen.findByRole('button', { name: 'Sudah ditugaskan' })).toBeDisabled()
+  })
+
+  it('narrows the list by search and offers a way out when nothing matches', async () => {
+    await renderPage(CaseCataloguePage)
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(ALL_CASES.length))
+    const user = userEvent.setup({ delay: null })
+    const box = screen.getByLabelText('Cari kasus')
+    await user.type(box, 'zzzz')
+    expect(await screen.findByText('Tidak ada kasus yang cocok')).toBeInTheDocument()
+    expect(screen.queryAllByRole('article')).toHaveLength(0)
+    await user.click(screen.getByRole('button', { name: 'Hapus pencarian' }))
+    await waitFor(() => expect(screen.getAllByRole('article')).toHaveLength(ALL_CASES.length))
   })
 })

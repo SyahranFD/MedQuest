@@ -7,7 +7,7 @@ import { PageBody } from '@/components/page/page-body'
 import { PageHeader } from '@/components/page/page-header'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { cn } from '@/lib/utils'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { DebriefView } from './debrief-view'
 import { GradingSequence } from './grading-sequence'
 import { clearFresh, isFresh, loadTraces } from './session-flow'
@@ -30,10 +30,22 @@ export function DebriefPage({ sessionId }: { sessionId: string }) {
 
   if (q.isPending) {
     return (
-      <PageBody aria-busy="true">
-        <Skeleton className="mb-6 h-12 w-1/2" />
-        <Skeleton className="mb-4 h-32" />
-        <Skeleton className="h-64" />
+      <PageBody aria-busy="true" className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <Skeleton className="h-7 w-32" />
+          <Skeleton className="h-4 w-64" />
+        </div>
+        <Skeleton className="h-3.5 w-40" />
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-14 w-32" />
+          <Skeleton className="h-6 w-20 rounded-full" />
+        </div>
+        <Skeleton className="h-5 w-3/4" />
+        <div className="flex flex-col">
+          {Array.from({ length: 6 }, (_, i) => (
+            <Skeleton key={i} className="my-3 h-8 w-full" />
+          ))}
+        </div>
       </PageBody>
     )
   }
@@ -72,42 +84,34 @@ export function DebriefPage({ sessionId }: { sessionId: string }) {
       ) : (
         <div className="flex flex-col gap-6">
           {record.evaluations.length > 1 && (
-            <div role="tablist" aria-label={st('debrief.patients')} className="flex flex-wrap gap-2">
-              {record.evaluations.map((ev, i) => (
-                <button
-                  key={ev.caseId}
-                  type="button"
-                  role="tab"
-                  aria-selected={i === index}
-                  onClick={() => setIndex(i)}
-                  className={cn(
-                    'min-h-11 rounded-full border px-4 text-body-s font-medium transition-[background-color,transform] duration-100 active:scale-[.985]',
-                    i === index ? 'border-ink-1 bg-ink-1 text-primary-ink' : 'border-line-strong text-ink-2 hover:bg-panel',
-                  )}
-                >
-                  {ev.caseTitle}
-                </button>
-              ))}
-            </div>
+            <Tabs value={String(index)} onValueChange={(v) => setIndex(Number(v))} variant="underline">
+              <TabsList aria-label={st('debrief.patients')} className="overflow-x-auto">
+                {record.evaluations.map((ev, i) => (
+                  <TabsTrigger key={ev.caseId} value={String(i)}>
+                    {ev.caseTitle}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
           )}
           <DebriefView
             evaluation={evaluation}
             trace={traces?.[caseId] ?? null}
             actions={
               <>
-                <Button asChild size="lg">
-                  <Link to="/app/kasus/$caseId" params={{ caseId }}>
-                    <RotateCcw aria-hidden="true" />
-                    {st('debrief.retry')}
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="secondary">
+                <Button asChild>
                   <Link to={CASES_PATH}>
                     <Stethoscope aria-hidden="true" />
                     {st('debrief.other')}
                   </Link>
                 </Button>
-                <Button asChild size="lg" variant="secondary">
+                <Button asChild variant="secondary">
+                  <Link to="/app/kasus/$caseId" params={{ caseId }}>
+                    <RotateCcw aria-hidden="true" />
+                    {st('debrief.retry')}
+                  </Link>
+                </Button>
+                <Button asChild variant="ghost">
                   <Link to={HISTORY_PATH}>
                     <History aria-hidden="true" />
                     {st('debrief.history')}
